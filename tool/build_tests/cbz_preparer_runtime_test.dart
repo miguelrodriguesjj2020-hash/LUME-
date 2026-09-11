@@ -10,6 +10,14 @@ Future<File> _zipDirectory(Directory source,String name) async {
   return zip;
 }
 
+Future<File> _maliciousTraversalZip(Directory temp) async {
+  final zip=File(p.join(temp.path,'traversal.cbz'));
+  const script='import sys,zipfile\np=sys.argv[1]\nwith zipfile.ZipFile(p,"w") as z:z.writestr("../escape.png",b"x")';
+  final result=await Process.run('python3',['-c',script,zip.path]);
+  if(result.exitCode!=0)throw StateError('python zip failed: ${result.stderr}');
+  return zip;
+}
+
 void main(){
   test('CBZ preparer extracts image pages in natural numeric order',() async {
     final temp=await Directory.systemTemp.createTemp('lume-cbz-runtime-');
@@ -25,5 +33,29 @@ void main(){
     expect(prepared.pages.map(p.basename).toList(),['page1.png','page2.png','page10.png']);
     expect(await File(prepared.pages[0]).readAsBytes(),[1]);
     expect(await File(prepared.pages[2]).readAsBytes(),[10]);
+  });
+
+  test('CBZ preparer rejects path traversal before extraction',() async {
+    final temp=await Directory.systemTemp.createTemp('lume-cbz-traversal-');
+    addTearDown(()=>temp.delete(recursive:true));
+    final cbz=await _maliciousTraversalZip(temp);
+    final destination=Directory(p.join(temp.path,'out'));
+    await expectLater(
+      CbzPreparer().prepare(cbz:cbz,destination:destination),
+      throwsA(isA<CbzPrepareException>()),
+    );
+    expect(await File(p.join(temp.parent.path,'escape.png')).exists(),isFalse);
+  });
+
+  test('CBZ preparer enforces per-page byte limit',() async {
+    final temp=await Directory.systemTemp.createTemp('lume-cbz-limit-');
+    addTearDown(()=>temp.delete(recursive:true));
+    final src=Directory(p.join(temp.path,'src'))..createSync(recursive:true);
+    await File(p.join(src.path,'page1.png')).writeAsBytes([1,2]);
+    final cbz=await _zipDirectory(src,'limit.cbz');
+    await expectLater(
+      CbzPreparer(maxPageBytes:1).prepare(cbz:cbz,destination:Directory(p.join(temp.path,'out'))),
+      throwsA(isA<CbzPrepareException>()),
+    );
   });
 }
