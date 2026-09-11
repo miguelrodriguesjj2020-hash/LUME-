@@ -37,6 +37,10 @@ jobs:
           python tool/harden_android_scaffold.py
           git apply --check tool/flutter_build_fixes.patch
           git apply tool/flutter_build_fixes.patch
+          git apply --check tool/catalog_initial_refresh_fix.patch
+          git apply tool/catalog_initial_refresh_fix.patch
+          git apply --check tool/user_journey_harness_fix.patch
+          git apply tool/user_journey_harness_fix.patch
           rm -f flutter/test/widget_test.dart flutter/analysis_options.yaml
           cp tool/build_tests/*.dart flutter/test/
           grep -q '^version: 0.35.3+38$' flutter/pubspec.yaml
