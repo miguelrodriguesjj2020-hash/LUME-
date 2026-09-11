@@ -1,0 +1,24 @@
+--- a/tool/android_user_journey.sh
++++ b/tool/android_user_journey.sh
+@@ -29,7 +29,10 @@
+ import re,sys,xml.etree.ElementTree as ET
+ needle=sys.argv[1]; root=ET.parse(sys.argv[2]).getroot()
+ for n in root.iter('node'):
+-    if n.attrib.get('text')==needle or n.attrib.get('content-desc')==needle:
++    text=n.attrib.get('text','')
++    desc=n.attrib.get('content-desc','')
++    semantic=desc.splitlines()[0] if desc else ''
++    if text==needle or desc==needle or semantic==needle:
+         m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.attrib.get('bounds',''))
+         if m:
+             x1,y1,x2,y2=map(int,m.groups()); print((x1+x2)//2,(y1+y2)//2); raise SystemExit(0)
+--- a/tool/user_journey_fixture.js
++++ b/tool/user_journey_fixture.js
+@@ -24,6 +24,7 @@
+ const server=http.createServer(async(req,res)=>{
+   try{
+     const u=new URL(req.url,'http://x');
++    console.log(`${req.method} ${u.pathname}${u.search}`);
+     if(req.method==='GET'&&u.pathname==='/v1/health')return send(res,200,{ok:true,service:'lume',protocol:1});
+     if(req.method==='GET'&&u.pathname==='/v1/ready')return send(res,200,{ok:true,service:'lume',protocol:1,durable:true,revision:REVISION,configOk:true});
+     if(req.method==='POST'&&u.pathname==='/v1/auth/login'){
