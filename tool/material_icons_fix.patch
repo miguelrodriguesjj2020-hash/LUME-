@@ -1,0 +1,9 @@
+--- a/flutter/pubspec.yaml
++++ b/flutter/pubspec.yaml
+@@ -19,3 +19,6 @@
+ dev_dependencies:
+   flutter_test:
+     sdk: flutter
++
++flutter:
++  uses-material-design: true
