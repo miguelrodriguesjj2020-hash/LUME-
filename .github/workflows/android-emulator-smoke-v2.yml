@@ -1,4 +1,4 @@
-name: LUME Android Emulator Smoke
+name: LUME Android Emulator Smoke v2
 
 on:
   workflow_run:
@@ -20,7 +20,7 @@ jobs:
         with:
           name: lume-qa-release-apk
           path: artifact
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id }}
 
@@ -36,6 +36,17 @@ jobs:
           test "$EXPECTED" = "$ACTUAL"
           printf 'APK=%s\nSHA256=%s\n' "$APK" "$ACTUAL" | tee artifact/emulator-input.txt
 
+      - name: Enable KVM acceleration
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+          ls -l /dev/kvm
+
       - name: Android 15 install, launch and relaunch smoke
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         with:
@@ -47,10 +58,11 @@ jobs:
           ram-size: 3072
           force-avd-creation: true
           disable-animations: true
+          disable-linux-hw-accel: false
           emulator-boot-timeout: 900
-          emulator-options: -no-snapshot-save -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          emulator-options: -no-snapshot-save -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
           script: |
-            set -euo pipefail
+            set -eu
             PKG=br.com.lume.bibliotecaestudantil
             ACTIVITY="$PKG/.MainActivity"
             APK="$(find artifact -type f -name app-release.apk -print -quit)"
@@ -107,7 +119,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: lume-android15-emulator-smoke
+          name: lume-android15-emulator-smoke-v2
           path: artifact/emulator-qa/*
           if-no-files-found: warn
           retention-days: 14
