@@ -1,0 +1,106 @@
+name: LUME Android Emulator Smoke
+
+on:
+  workflow_run:
+    workflows: ["LUME Android Build"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  emulator-smoke:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download exact APK artifact from successful build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: lume-qa-release-apk
+          path: artifact
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Verify downloaded artifact integrity
+        run: |
+          set -euo pipefail
+          APK="$(find artifact -type f -name app-release.apk -print -quit)"
+          HASH_FILE="$(find artifact -type f -name app-release.apk.sha256 -print -quit)"
+          test -n "$APK" && test -f "$APK"
+          test -n "$HASH_FILE" && test -f "$HASH_FILE"
+          EXPECTED="$(awk '{print $1}' "$HASH_FILE")"
+          ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+          test "$EXPECTED" = "$ACTUAL"
+          printf 'APK=%s\nSHA256=%s\n' "$APK" "$ACTUAL" | tee artifact/emulator-input.txt
+
+      - name: Android 15 install, launch and relaunch smoke
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          cores: 2
+          ram-size: 3072
+          force-avd-creation: true
+          disable-animations: true
+          emulator-boot-timeout: 900
+          emulator-options: -no-snapshot-save -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: |
+            set -euo pipefail
+            PKG=br.com.lume.bibliotecaestudantil
+            APK="$(find artifact -type f -name app-release.apk -print -quit)"
+            mkdir -p artifact/emulator-qa
+            adb wait-for-device
+            adb shell getprop ro.product.manufacturer | tr -d '\r' > artifact/emulator-qa/manufacturer.txt
+            adb shell getprop ro.product.model | tr -d '\r' > artifact/emulator-qa/model.txt
+            adb shell getprop ro.build.version.release | tr -d '\r' > artifact/emulator-qa/android-version.txt
+            adb shell getprop ro.build.version.sdk | tr -d '\r' > artifact/emulator-qa/api-level.txt
+            adb install "$APK" | tee artifact/emulator-qa/install.txt
+            adb shell pm path "$PKG" | tee artifact/emulator-qa/package-path.txt
+            adb shell dumpsys package "$PKG" > artifact/emulator-qa/package-dump.txt
+            grep -q 'versionCode=38' artifact/emulator-qa/package-dump.txt
+            grep -q 'versionName=0.35.3' artifact/emulator-qa/package-dump.txt
+
+            adb logcat -c
+            adb shell am force-stop "$PKG"
+            adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 | tee artifact/emulator-qa/launch-1.txt
+            sleep 8
+            PID1="$(adb shell pidof "$PKG" | tr -d '\r')"
+            test -n "$PID1"
+            echo "$PID1" > artifact/emulator-qa/pid-first-launch.txt
+            adb exec-out screencap -p > artifact/emulator-qa/first-launch.png
+            adb shell dumpsys activity activities > artifact/emulator-qa/activity-first-launch.txt
+            grep -q "$PKG" artifact/emulator-qa/activity-first-launch.txt
+
+            adb shell am force-stop "$PKG"
+            sleep 2
+            if adb shell pidof "$PKG" | grep -q '[0-9]'; then
+              echo 'process survived force-stop unexpectedly' >&2
+              exit 71
+            fi
+            adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 | tee artifact/emulator-qa/launch-2.txt
+            sleep 8
+            PID2="$(adb shell pidof "$PKG" | tr -d '\r')"
+            test -n "$PID2"
+            echo "$PID2" > artifact/emulator-qa/pid-second-launch.txt
+            adb exec-out screencap -p > artifact/emulator-qa/second-launch.png
+
+            adb logcat -d -v threadtime > artifact/emulator-qa/logcat.txt
+            if grep -E "ANR in ${PKG}|Process: ${PKG}" artifact/emulator-qa/logcat.txt | grep -E 'ANR|FATAL EXCEPTION'; then
+              echo 'LUME crash/ANR signature detected in logcat' >&2
+              exit 72
+            fi
+            echo 'EMULATOR_SMOKE=pass' | tee artifact/emulator-qa/result.txt
+
+      - name: Upload emulator smoke evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lume-android15-emulator-smoke
+          path: artifact/emulator-qa/*
+          if-no-files-found: warn
+          retention-days: 14
