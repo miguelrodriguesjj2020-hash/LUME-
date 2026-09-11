@@ -1,0 +1,63 @@
+R seja validada com segurança neste dispositivo.',
+            textAlign:TextAlign.center,
+          ),
+        )),
+      );
+    default:
+      return Scaffold(
+        appBar: AppBar(title: const Text('Formato não suportado')),
+        body: Center(child: Text('Formato ${edition.format} ainda não possui leitor.')),
+      );
+  }
+}
+
+FILE 44 3838
+flutter/lib/readers/reader_session_page.dart
+import 'package:flutter/material.dart';
+import '../models/catalog.dart';
+import '../models/progress.dart';
+import '../services/app_services.dart';
+import '../services/media_open_coordinator.dart';
+import 'reader_factory.dart';
+
+class ReaderSessionPage extends StatefulWidget {
+  final Edition edition;
+  final AppServices services;
+  const ReaderSessionPage({super.key, required this.edition, required this.services});
+
+  @override
+  State<ReaderSessionPage> createState() => _ReaderSessionPageState();
+}
+
+class _ReaderSessionPageState extends State<ReaderSessionPage> {
+  late Future<OpenedMedia> opening;
+  ReadingLocator? _lastSaved;
+
+  @override
+  void initState() {
+    super.initState();
+    if(widget.edition.format.toLowerCase()=='cbr'){
+      opening=Future<OpenedMedia>.error(
+        UnsupportedError('CBR/RAR ainda não possui cadeia de extração validada'),
+      );
+    }else{
+      opening = widget.services.mediaOpen.open(
+        edition: widget.edition,
+        profileId: widget.services.profileId,
+      );
+    }
+  }
+
+  Future<void> _save(ReadingLocator locator) async {
+    // Reader widgets may emit the same locator repeatedly during layout/visibility
+    // changes. Avoid unnecessary SQLite/outbox writes before the DB coalescer.
+    if (_lastSaved?.toJson().toString() == locator.toJson().toString()) return;
+    _lastSaved = locator;
+    await widget.services.progress().save(widget.edition.id, locator);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if(widget.edition.format.toLowerCase()=='cbr'){
+      return Scaffold(
+        appBar:AppBar(title:Text(widget.e

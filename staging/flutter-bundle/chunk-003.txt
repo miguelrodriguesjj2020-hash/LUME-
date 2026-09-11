@@ -1,0 +1,61 @@
+ media_revalidation(edition_id TEXT PRIMARY KEY,remote_source_tag TEXT,checked_at INTEGER NOT NULL,needs_update INTEGER NOT NULL DEFAULT 0,last_error TEXT)');
+    await d.execute("CREATE TABLE media_replacements(edition_id TEXT PRIMARY KEY,state TEXT NOT NULL,temp_path TEXT NOT NULL,expected_bytes INTEGER,received_bytes INTEGER NOT NULL DEFAULT 0,etag TEXT,sha256 TEXT,source_tag TEXT,updated_at INTEGER NOT NULL,last_error TEXT,staged_path TEXT,backup_path TEXT,phase TEXT NOT NULL DEFAULT 'downloading')");
+    await d.execute('CREATE TABLE sync_retry(profile_id TEXT PRIMARY KEY,attempt INTEGER NOT NULL DEFAULT 0,next_retry_at INTEGER,last_error TEXT,updated_at INTEGER NOT NULL)');
+    await d.execute('CREATE INDEX idx_sync_retry_next ON sync_retry(next_retry_at)');
+    await d.execute("CREATE TABLE sync_schedule(profile_id TEXT PRIMARY KEY,mode TEXT NOT NULL DEFAULT 'foreground',last_attempt_at INTEGER,last_success_at INTEGER,deferred_until INTEGER,last_error TEXT,updated_at INTEGER NOT NULL)");
+    await d.execute('CREATE INDEX idx_sync_schedule_deferred ON sync_schedule(deferred_until)');
+    await d.execute("CREATE TABLE settings(k TEXT PRIMARY KEY,v TEXT NOT NULL,updated_at INTEGER NOT NULL)");
+    await d.execute("CREATE TABLE retired_editions(edition_id TEXT PRIMARY KEY,json TEXT NOT NULL,retired_at INTEGER NOT NULL)");
+    await d.execute('CREATE INDEX idx_retired_editions_at ON retired_editions(retired_at)');
+    await d.execute('CREATE INDEX idx_outbox_profile_created ON outbox(profile_id,created_at)');
+    await d.execute("CREATE TABLE outbox_dead_letter(op_id TEXT PRIMARY KEY,profile_id TEXT,kind TEXT NOT NULL,payload TEXT NOT NULL,created_at INTEGER NOT NULL,quarantined_at INTEGER NOT NULL,reason TEXT NOT NULL)");
+  }
+
+  Future<String> getOrCreateDeviceId() async {
+    final d = await db;
+    final rows = await d.query('meta', columns: ['v'], where: 'k=?', whereArgs: ['device_id'], limit: 1);
+    if (rows.isNotEmpty) return rows.first['v'] as String;
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final id = 'android-$now';
+    await d.insert('meta', {'k': 'device_id', 'v': id}, conflictAlgorithm: ConflictAlgorithm.replace);
+    return id;
+  }
+
+  Future<int> getRevision() async {
+    final d = await db;
+    final rows = await d.query('meta', columns: ['v'], where: 'k=?', whereArgs: ['revision'], limit: 1);
+    return rows.isEmpty ? 0 : int.tryParse(rows.first['v'] as String) ?? 0;
+  }
+
+  Future<String> getSyncCursor(String profileId) async {
+    final d = await db;
+    final key = 'sync_cursor:$profileId';
+    final rows = await d.query('meta', columns: ['v'], where: 'k=?', whereArgs: [key], limit: 1);
+    return rows.isEmpty ? '0' : rows.first['v'] as String;
+  }
+
+  Future<void> setSyncCursor(String profileId, String cursor) async {
+    final d = await db;
+    await d.insert('meta', {'k': 'sync_cursor:$profileId', 'v': cursor}, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<void> _archiveEditionIfNeededTx(DatabaseExecutor t,String editionId) async {
+    final editionRows=await t.query('editions',columns:['json'],where:'id=?',whereArgs:[editionId],limit:1);
+    if(editionRows.isEmpty)return;
+    final assets=await t.query('offline_assets',columns:['edition_id'],where:'edition_id=?',whereArgs:[editionId],limit:1);
+    final progress=await t.query('progress',columns:['edition_id'],where:'edition_id=?',whereArgs:[editionId],limit:1);
+    if(assets.isEmpty && progress.isEmpty)return;
+    await t.insert('retired_editions',{
+      'edition_id':editionId,
+      'json':editionRows.first['json'],
+      'retired_at':DateTime.now().millisecondsSinceEpoch,
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  static Future<void> _archiveAllAtRiskEditionsTx(DatabaseExecutor t) async {
+    final rows=await t.rawQuery("""
+      SELECT DISTINCT e.id
+      FROM editions e
+      LEFT JOIN offline_assets a ON a.edition_id=e.id
+      LEFT JOIN progress p ON p.edition_id=e.id
+      WHERE a.edition_id

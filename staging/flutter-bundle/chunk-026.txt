@@ -1,0 +1,48 @@
+dition.fileName)),
+        body:const Center(child:Padding(
+          padding:EdgeInsets.all(24),
+          child:Text(
+            'Este arquivo usa CBR/RAR. A LUME não fará download nem extração automática enquanto a cadeia RAR não estiver validada com segurança.',
+            textAlign:TextAlign.center,
+          ),
+        )),
+      );
+    }
+    return FutureBuilder<OpenedMedia>(
+        future: opening,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Scaffold(
+              appBar: AppBar(title: Text(widget.edition.fileName)),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.error_outline, size: 44),
+                    const SizedBox(height: 12),
+                    Text('Não foi possível preparar esta edição.\n${snapshot.error}', textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () => setState(() {
+                        opening = widget.services.mediaOpen.open(
+                          edition: widget.edition,
+                          profileId: widget.services.profileId,
+                        );
+                      }),
+                      child: const Text('Tentar novamente'),
+                    ),
+                  ]),
+                ),
+              ),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          final opened = snapshot.data!;
+          return readerFor(
+            edition: widget.edition,
+            localPath: opened.localPath,
+            preparedEpubEntry: opened.epubEntryPath ?? opened.epub?.spine.first,
+            preparedEpubRoot: opened.epub?.root.path,
+            preparedEpubSpine: opened.

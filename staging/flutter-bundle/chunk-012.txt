@@ -1,0 +1,37 @@
+cement_state,m.phase AS replacement_phase,m.received_bytes AS replacement_received_bytes,m.expected_bytes AS replacement_expected_bytes,m.last_error AS replacement_last_error FROM media_revalidation r LEFT JOIN editions e ON e.id=r.edition_id LEFT JOIN media_replacements m ON m.edition_id=r.edition_id WHERE r.needs_update=1 ORDER BY r.checked_at DESC");
+    return rows.map((r)=>{
+      ...Map<String,dynamic>.from(r),
+      if(r['edition_json'] is String) 'edition':jsonDecode(r['edition_json'] as String),
+    }).toList();
+  }
+
+  Future<void> saveSyncSchedule(String profileId,{required String mode,int? lastAttemptAt,int? lastSuccessAt,int? deferredUntil,String? lastError}) async {
+    final d=await db; final previous=await getSyncSchedule(profileId); final now=DateTime.now().millisecondsSinceEpoch;
+    await d.insert('sync_schedule',{
+      'profile_id':profileId,'mode':mode,
+      'last_attempt_at':lastAttemptAt??previous?['last_attempt_at'],
+      'last_success_at':lastSuccessAt??previous?['last_success_at'],
+      'deferred_until':deferredUntil,'last_error':lastError,'updated_at':now,
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  Future<Map<String,dynamic>?> getSyncSchedule(String profileId) async {
+    final d=await db; final rows=await d.query('sync_schedule',where:'profile_id=?',whereArgs:[profileId],limit:1);
+    return rows.isEmpty?null:Map<String,dynamic>.from(rows.first);
+  }
+
+  Future<void> clearSyncScheduleDeferral(String profileId,{required String mode}) async {
+    final now=DateTime.now().millisecondsSinceEpoch;
+    await saveSyncSchedule(profileId,mode:mode,lastSuccessAt:now,deferredUntil:null,lastError:null);
+  }
+
+  Future<int> pruneUnreferencedRetiredEditions() async {
+    final d=await db;
+    return d.rawDelete("""
+      DELETE FROM retired_editions
+      WHERE edition_id NOT IN (SELECT edition_id FROM offline_assets)
+        AND edition_id NOT IN (SELECT edition_id FROM progress)
+    """);
+  }
+
+  Future<void> setSetting(String key,Str

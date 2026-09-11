@@ -1,0 +1,52 @@
+                     ChoiceChip(
+                        label:const Text('Todos'),
+                        selected:selectedSection==null,
+                        onSelected:(_)=>setState(()=>selectedSection=null),
+                      ),
+                      const SizedBox(width:8),
+                      for(final section in sections)...[
+                        ChoiceChip(
+                          label:Text(section),
+                          selected:selectedSection==section,
+                          onSelected:(selected)=>setState(()=>selectedSection=selected ? section : null),
+                        ),
+                        const SizedBox(width:8),
+                      ],
+                    ]),
+                  ),
+                ),
+                if(visible.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody:false,
+                    child:Center(child:Padding(
+                      padding:EdgeInsets.all(24),
+                      child:Text('Nenhuma obra nesta seção editorial.'),
+                    )),
+                  )
+                else
+                  SliverPadding(
+                    padding:const EdgeInsets.all(16),
+                    sliver:SliverGrid(
+                      gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:2,
+                        childAspectRatio:.62,
+                        crossAxisSpacing:14,
+                        mainAxisSpacing:18,
+                      ),
+                      delegate:SliverChildBuilderDelegate(
+                        (_,index)=>_WorkCard(work:visible[index],onOpen:widget.onOpen,onDownload:widget.onDownload),
+                        childCount:visible.length,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      );
+}
+
+class _WorkCard extends StatelessWidget {
+  final Work work;
+  final ValueChanged<Edition> onOpen;
+  fin

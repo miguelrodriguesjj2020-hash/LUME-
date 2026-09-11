@@ -1,0 +1,49 @@
+d,{int limit = 50}) async {
+    final d = await db;
+    final rows = await d.query('outbox', where:'profile_id=?', whereArgs:[profileId], orderBy: 'created_at ASC', limit: limit);
+    final valid=<Map<String,dynamic>>[];
+    await d.transaction((t) async {
+      for(final r in rows){
+        try{
+          final payload=Map<String,dynamic>.from(jsonDecode(r['payload'] as String));
+          if(payload['profileId']!=profileId)throw const FormatException('profile mismatch');
+          payload['opId'] ??= r['op_id'];
+          payload['kind'] ??= r['kind'];
+          valid.add(payload);
+        }catch(e){
+          await _quarantineOutboxRowTx(t,Map<String,Object?>.from(r),'decode: $e');
+        }
+      }
+    });
+    return valid;
+  }
+
+  Future<int> deadLetterOutboxCount() async {
+    final d=await db;
+    final rows=await d.rawQuery('SELECT COUNT(*) AS n FROM outbox_dead_letter');
+    return (rows.first['n'] as num?)?.toInt()??0;
+  }
+
+  Future<void> applySyncBatch(String profileId,{
+    required Iterable<String> ackOpIds,
+    required List<dynamic> events,
+    required List<dynamic> rejected,
+    required String previousCursor,
+    required String nextCursor,
+  }) async {
+    final prev=int.tryParse(previousCursor);
+    final next=int.tryParse(nextCursor);
+    if(prev==null || next==null || next<prev)throw StateError('invalid sync cursor transition $previousCursor -> $nextCursor');
+    final d=await db;
+    await d.transaction((t) async {
+      final ids=ackOpIds.toSet().toList(growable:false);
+      if(ids.isNotEmpty){
+        final marks=List.filled(ids.length,'?').join(',');
+        await t.delete('outbox',where:'profile_id=? AND op_id IN ($marks)',whereArgs:[profileId,...ids]);
+      }
+      for(final raw in rejected){
+        if(raw is! Map)continue;
+        final r=Map<String,dynamic>.from(raw);
+        final opId=r['opId'];
+        if(opId is! String || opId.isEmpty)continue;
+        final rows=await t.query('outbox',where:'profile_id=? AND op_id=?',whereArgs:[

@@ -1,0 +1,43 @@
+ffline_assets', {
+      'edition_id': a['editionId'],
+      'state': a['state'],
+      'local_path': a['localPath'],
+      'temp_path': a['tempPath'],
+      'expected_bytes': a['expectedBytes'],
+      'received_bytes': a['receivedBytes'] ?? 0,
+      'etag': a['etag'],
+      'sha256': a['sha256'],
+      'source_tag': a['sourceTag'],
+      'updated_at': a['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
+      'pinned': a['pinned'] == true ? 1 : (a['pinned'] is num ? a['pinned'] : 0),
+      'last_accessed_at': a['lastAccessedAt'],
+      'retry_count': a['retryCount'] ?? 0,
+      'last_error': a['lastError'],
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> touchOfflineAsset(String editionId) async {
+    final d = await db;
+    await d.update('offline_assets', {'last_accessed_at': DateTime.now().millisecondsSinceEpoch}, where: 'edition_id=?', whereArgs: [editionId]);
+  }
+
+  Future<void> setOfflinePinned(String editionId, bool pinned) async {
+    final d = await db;
+    await d.update('offline_assets', {'pinned': pinned ? 1 : 0}, where: 'edition_id=?', whereArgs: [editionId]);
+  }
+
+  Future<List<Map<String, dynamic>>> evictionCandidates({int limit = 100}) async {
+    final d = await db;
+    final rows = await d.rawQuery("SELECT * FROM offline_assets WHERE state='ready' AND pinned=0 AND edition_id NOT IN (SELECT edition_id FROM media_replacements WHERE state IN ('downloading','verifying')) ORDER BY COALESCE(last_accessed_at,updated_at) ASC LIMIT ?",[limit]);
+    return rows.map((r) => Map<String,dynamic>.from(r)).toList();
+  }
+
+  Future<void> deleteOfflineAsset(String editionId) async {
+    final d = await db;
+    await d.delete('offline_assets', where: 'edition_id=?', whereArgs: [editionId]);
+  }
+
+  Future<int> readyOfflineBytes() async {
+    final d = await db;
+    final rows = await d.rawQuery("SELECT COALESCE(SUM(COALESCE(expected_bytes,received_bytes,0)),0) AS total FROM offline_assets WHERE state='ready'");
+    return (rows.first['tota

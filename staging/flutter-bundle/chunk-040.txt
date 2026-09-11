@@ -1,0 +1,36 @@
+call(editionId, OfflineState.verifying, localBytes, expectedBytes);
+        await _verify(part, expectedBytes: expectedBytes, expectedSha256: expectedSha256);
+        final promotionBackup=File('${target.path}.previous-download');
+        if(await promotionBackup.exists())await promotionBackup.delete();
+        final hadTarget=await target.exists();
+        if(hadTarget)await target.rename(promotionBackup.path);
+        try{
+          await part.rename(target.path);
+        }catch(e){
+          if(hadTarget && await promotionBackup.exists() && !await target.exists())await promotionBackup.rename(target.path);
+          rethrow;
+        }
+        final finalBytes = await target.length();
+        try{
+          await _persist(editionId, OfflineState.ready, target, part, expectedBytes, finalBytes, effectiveEtag, expectedSha256, sourceTag, pinned: pinned, retryCount: retryCount, lastAccessedAt: DateTime.now().millisecondsSinceEpoch);
+        }catch(e){
+          if(hadTarget && await promotionBackup.exists()){
+            if(await target.exists())await target.delete();
+            await promotionBackup.rename(target.path);
+          }else if(await target.exists()){
+            // Preserve the verified bytes as resumable state when READY metadata
+            // could not be committed for a first-time download.
+            await target.rename(part.path);
+            localBytes=await part.length();
+          }
+          rethrow;
+        }
+        if(await promotionBackup.exists())await promotionBackup.delete();
+        onProgress?.call(editionId, OfflineState.ready, finalBytes, expectedBytes);
+        return target;
+      }
+      throw const DownloadException('resume retry exhausted');
+    } on DownloadPaused {
+      final bytes = await part.exists() ? await part.length() : 0;
+      await _persist(editionId, OfflineState.paused, target, part, expectedBytes, bytes, effectiveEtag, expectedSha256, sourceTag, pinned: pinned, retryCount: retryCount);
+      onProgress?.call(editi

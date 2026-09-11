@@ -1,0 +1,46 @@
+
+        final ack = List<String>.from(response['ack'] ?? const []);
+        final events = List<dynamic>.from(response['events'] ?? const []);
+        final rejected = List<dynamic>.from(response['rejected'] ?? const []);
+        final previousCursor = cursor;
+        final next = '${response['cursor'] ?? cursor}';
+        await db.applySyncBatch(
+          profileId,
+          ackOpIds:ack,
+          events:events,
+          rejected:rejected,
+          previousCursor:previousCursor,
+          nextCursor:next,
+        );
+        if (next != previousCursor) cursor = next;
+        sent += ack.length;
+        received += events.length;
+        final noPending = (await db.loadOutbox(profileId,limit: 1)).isEmpty;
+        if (noPending && events.isEmpty) break;
+        if (next == previousCursor && events.isEmpty && ack.isEmpty) break;
+      }
+      await persistentBackoff.recordSuccess(profileId);
+      await db.clearSyncScheduleDeferral(profileId,mode:mode.name);
+      return SyncResult(catalogChanged: catalogChanged, sentOps: sent, receivedEvents: received, cursor: cursor);
+    } catch(e) {
+      if(e is SessionExpiredException || e is SyncBackoffActive || e is SyncDeferred)rethrow;
+      if(retryPolicy.isTransient(e)){
+        await persistentBackoff.recordFailure(profileId,e,retryAfter:e is ApiException?e.retryAfter:null);
+        final barrier=await persistentBackoff.remaining(profileId);
+        final until=DateTime.now().add(barrier??const Duration(seconds:30)).millisecondsSinceEpoch;
+        await db.saveSyncSchedule(profileId,mode:mode.name,deferredUntil:until,lastError:e.toString());
+      }else{
+        await db.saveSyncSchedule(profileId,mode:mode.name,deferredUntil:null,lastError:e.toString());
+      }
+      rethrow;
+    }
+  }
+}
+
+FILE 44 2577
+flutter/lib/ui/catalog_diagnostics_page.dart
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../services/app_services.dart';
+import '../services/catalog_d

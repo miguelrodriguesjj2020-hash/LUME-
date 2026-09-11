@@ -1,0 +1,71 @@
+epub?.spine,
+            epubFixedLayout: opened.epub?.fixedLayout ?? false,
+            preparedCbzPages: opened.cbz?.pages,
+            locator: opened.locator,
+            onProgress: _save,
+          );
+        },
+      );
+  }
+}
+
+FILE 29 5181
+flutter/lib/services/api.dart
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class SessionExpiredException implements Exception {
+  final String operation;
+  const SessionExpiredException(this.operation);
+  @override String toString() => 'SessionExpiredException($operation)';
+}
+
+class ApiException implements Exception {
+  final String operation;
+  final int statusCode;
+  final String? body;
+  final Duration? retryAfter;
+  const ApiException(this.operation,this.statusCode,[this.body,this.retryAfter]);
+  @override String toString()=> 'ApiException($operation, $statusCode)';
+}
+
+enum SessionEventType { authenticated, expired, cleared }
+
+class SessionEvent {
+  final SessionEventType type;
+  final String? profileId;
+  final String? reason;
+  const SessionEvent(this.type,{this.profileId,this.reason});
+}
+
+class LumeSession {
+  String? token;
+  String? profileId;
+  String? role;
+  int? expiresAt;
+
+  bool get authenticated => token!=null && token!.isNotEmpty && !expired;
+  bool get expired => expiresAt!=null && expiresAt!<=DateTime.now().millisecondsSinceEpoch;
+
+  LumeSession copy()=>LumeSession()
+    ..token=token
+    ..profileId=profileId
+    ..role=role
+    ..expiresAt=expiresAt;
+
+  void clear(){token=null;profileId=null;role=null;expiresAt=null;}
+}
+
+class LumeApi {
+  final Uri base;
+  final http.Client client;
+  final LumeSession session;
+  final _sessionEvents=StreamController<SessionEvent>.broadcast();
+  bool _expiredEventSent=false;
+
+  LumeApi(this.base,{http.Client? client,LumeSession? session})
+      :client=client??http.Client(),session=session??LumeSession();
+
+  Stream<SessionEvent> get sessionEvents=>_sessionEvents.stream;
+  Uri _u(String p,[Map<String,String>? q])=>base.resolve(p).r

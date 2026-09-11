@@ -1,0 +1,50 @@
+ntries
+      .map((entry)=>p.relative(entry,from:widget.rootPath).replaceAll('\\','/'))
+      .map(_normalizeRel)
+      .toList(growable:false);
+
+  int _spineIndexForHref(String href) {
+    final rel=_normalizeRel(href);
+    final spine=_relativeSpine;
+    final i=spine.indexOf(rel);
+    if(i>=0)return i;
+    final fromInitial=widget.initial.spineIndex;
+    if(fromInitial!=null && fromInitial>=0 && fromInitial<spine.length)return fromInitial;
+    return 0;
+  }
+
+  Future<void> _installForPage(String url) async {
+    final href=_hrefFor(url);
+    final nextIndex=_spineIndexForHref(href);
+    if(mounted && nextIndex!=currentSpineIndex)setState(()=>currentSpineIndex=nextIndex);
+    await controller.runJavaScript(cfiBridgeInstallScript());
+    if (widget.fixedLayout) {
+      await controller.runJavaScript("""
+        (() => {
+          const meta = document.querySelector('meta[name=viewport]');
+          if (!meta) { const m=document.createElement('meta'); m.name='viewport'; m.content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=yes'; document.head.appendChild(m); }
+          document.documentElement.style.overflow='auto';
+          document.body.style.margin='0';
+        })();
+      """);
+    }
+    if (!initialRestored) {
+      initialRestored = true;
+      await controller.runJavaScript(restoreScript(widget.initial));
+    }
+    await controller.runJavaScript(progressCaptureScript(href));
+  }
+
+  @override void initState() {
+    super.initState();
+    currentSpineIndex=_spineIndexForHref(
+      widget.initial.href.isNotEmpty ? widget.initial.href : _hrefFor(widget.localEntry.toString()),
+    );
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onNavigationRequest: (request) {
+          final uri = Uri.tryParse(request.url);
+          return uri != null && _isAllowedLocal(uri) ? NavigationDecision.navigate : NavigationDecision.prevent;
+        },
+      

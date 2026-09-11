@@ -1,0 +1,41 @@
+a256 TEXT,source_tag TEXT,updated_at INTEGER NOT NULL,last_error TEXT)');
+            await d.execute('CREATE TABLE IF NOT EXISTS sync_retry(profile_id TEXT PRIMARY KEY,attempt INTEGER NOT NULL DEFAULT 0,next_retry_at INTEGER,last_error TEXT,updated_at INTEGER NOT NULL)');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_sync_retry_next ON sync_retry(next_retry_at)');
+          }
+          if (oldVersion < 8) {
+            await d.execute('ALTER TABLE media_replacements ADD COLUMN staged_path TEXT');
+            await d.execute('ALTER TABLE media_replacements ADD COLUMN backup_path TEXT');
+            await d.execute("ALTER TABLE media_replacements ADD COLUMN phase TEXT NOT NULL DEFAULT 'downloading'");
+            await d.execute("CREATE TABLE IF NOT EXISTS sync_schedule(profile_id TEXT PRIMARY KEY,mode TEXT NOT NULL DEFAULT 'foreground',last_attempt_at INTEGER,last_success_at INTEGER,deferred_until INTEGER,last_error TEXT,updated_at INTEGER NOT NULL)");
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_sync_schedule_deferred ON sync_schedule(deferred_until)');
+          }
+          if (oldVersion < 9) {
+            await d.execute("CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY,v TEXT NOT NULL,updated_at INTEGER NOT NULL)");
+          }
+          if (oldVersion < 10) {
+            await d.execute("CREATE TABLE IF NOT EXISTS retired_editions(edition_id TEXT PRIMARY KEY,json TEXT NOT NULL,retired_at INTEGER NOT NULL)");
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_retired_editions_at ON retired_editions(retired_at)');
+          }
+          if (oldVersion < 11) {
+            await d.execute('ALTER TABLE outbox ADD COLUMN profile_id TEXT');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_outbox_profile_created ON outbox(profile_id,created_at)');
+            await d.execute("CREATE TABLE IF NOT EXISTS outbox_dead_letter(op_id TEXT PRIMARY KEY,profile_id TEXT,kind TEXT NOT NULL,payload TEXT NOT NULL,created_at INTEGER NOT NULL,quarantined_at INTEGER NOT NULL,reason TEXT NOT NULL)");
+          }
+        },
+      );
+
+  static Future<void> _create(DatabaseExecutor d) async {
+    await d.execute('CREATE TABLE meta(k TEXT PRIMARY KEY,v TEXT NOT NULL)');
+    await d.execute('CREATE TABLE works(id TEXT PRIMARY KEY,title TEXT NOT NULL,type TEXT NOT NULL,json TEXT NOT NULL)');
+    await d.execute('CREATE TABLE editions(id TEXT PRIMARY KEY,work_id TEXT NOT NULL,json TEXT NOT NULL)');
+    await d.execute('CREATE TABLE progress(profile_id TEXT NOT NULL,edition_id TEXT NOT NULL,locator TEXT NOT NULL,percent REAL NOT NULL,updated_at INTEGER NOT NULL,completed INTEGER NOT NULL DEFAULT 0,device_id TEXT,PRIMARY KEY(profile_id,edition_id))');
+    await d.execute('CREATE TABLE outbox(op_id TEXT PRIMARY KEY,kind TEXT NOT NULL,payload TEXT NOT NULL,created_at INTEGER NOT NULL,scope_key TEXT,profile_id TEXT)');
+    await d.execute('CREATE TABLE offline_assets(edition_id TEXT PRIMARY KEY,state TEXT NOT NULL,local_path TEXT,temp_path TEXT,expected_bytes INTEGER,received_bytes INTEGER NOT NULL DEFAULT 0,etag TEXT,sha256 TEXT,updated_at INTEGER NOT NULL,source_tag TEXT,pinned INTEGER NOT NULL DEFAULT 0,last_accessed_at INTEGER,retry_count INTEGER NOT NULL DEFAULT 0,last_error TEXT)');
+    await d.execute('CREATE INDEX idx_editions_work ON editions(work_id)');
+    await d.execute('CREATE INDEX idx_outbox_created ON outbox(created_at)');
+    await d.execute('CREATE INDEX idx_progress_updated ON progress(updated_at)');
+    await d.execute('CREATE INDEX idx_outbox_scope ON outbox(kind,scope_key)');
+    await d.execute('CREATE INDEX idx_offline_lru ON offline_assets(state,pinned,last_accessed_at)');
+    await d.execute('CREATE TABLE download_jobs(edition_id TEXT PRIMARY KEY,state TEXT NOT NULL,request_json TEXT NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)');
+    await d.execute('CREATE INDEX idx_download_jobs_state ON download_jobs(state,updated_at)');
+    await d.execute('CREATE TABLE

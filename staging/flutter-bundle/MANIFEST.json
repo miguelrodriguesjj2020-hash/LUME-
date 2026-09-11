@@ -1,0 +1,10 @@
+{
+  "format": "LUME_TEXT_BUNDLE_V1",
+  "sourceVersion": "0.35.0+35",
+  "bundleBytes": 185942,
+  "bundleSha256": "a9c6409be857d97b46217f4ee271e6d0dc03e10a68d87fa6a62e93fc3e5dd616",
+  "firstChunk": 0,
+  "lastChunk": 86,
+  "chunkCount": 87,
+  "sourceFiles": 52
+}

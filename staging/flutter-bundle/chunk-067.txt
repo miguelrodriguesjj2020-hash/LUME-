@@ -1,0 +1,39 @@
+able intent + ephemeral authorization. Only edition identity is persisted;
+/// signed/provider URLs are always resolved fresh at execution time.
+class DownloadSnapshot {
+  final String editionId; final String state; final int receivedBytes; final int? expectedBytes;
+  const DownloadSnapshot(this.editionId,this.state,this.receivedBytes,this.expectedBytes);
+  double? get fraction => expectedBytes == null || expectedBytes == 0 ? null : receivedBytes / expectedBytes!;
+}
+
+class RecoverableDownloadCoordinator {
+  final LumeDb db; final LumeApi api; final DownloadManager manager; final Directory mediaDirectory;
+  late final DownloadQueue queue;
+  final _changes=StreamController<DownloadSnapshot>.broadcast();
+  Stream<DownloadSnapshot> get changes=>_changes.stream;
+  RecoverableDownloadCoordinator({required this.db,required this.api,required this.manager,required this.mediaDirectory,int concurrency=2}){
+    queue=DownloadQueue(manager,concurrency:concurrency,onTerminal:_onTerminal,onProgress:_onProgress);
+  }
+
+  Future<void> initialize() async {
+    await db.normalizeInterruptedDownloads();
+    for(final row in await db.recoverableDownloadJobs()){
+      if(row['state']=='failed')continue;
+      _queue(row['edition_id'] as String);
+    }
+  }
+
+  Future<void> enqueueEdition(String editionId,{bool pinned=false}) async {
+    await db.upsertDownloadJob(editionId:editionId,state:'queued',request:{'editionId':editionId,'pinned':pinned});
+    _queue(editionId);
+  }
+
+  Future<void> retry(String editionId) async {await db.setDownloadJobState(editionId,'queued');_queue(editionId);}
+  void pause(String editionId){queue.pause(editionId);db.setDownloadJobState(editionId,'paused');}
+  void cancel(String editionId){queue.cancel(editionId);db.deleteDownloadJob(editionId);}
+  Future<void> resume(String editionId) async {await db.setDownloadJobState(editionId,'queued');_queue(editionId);}
+
+  void _queue(String editionId){
+    queue.enqueue(DownloadTask(
+      editionId:editionId,
+      directo

@@ -1,0 +1,27 @@
+=child;break;}}n=found;if(!n)return null;}
+  }return n;
+};
+window.LUME={__cfiVersion:1,
+ currentCfi(){let n=null;const sel=getSelection();if(sel&&sel.rangeCount)n=sel.getRangeAt(0).startContainer;if(!n){const e=document.elementFromPoint(innerWidth/2,Math.max(1,innerHeight/3));n=e||document.body;}return pathTo(n);},
+ restoreCfi(cfi){const n=resolve(cfi);if(!n)return false;const e=n.nodeType===1?n:n.parentElement;if(!e)return false;e.scrollIntoView({block:'center'});return true;}
+};})();''';
+
+String restoreScript(EpubLocator l) {
+  final cfi = normalizeEpubCfi(l.cfi);
+  final p = (l.progression ?? 0).clamp(0, 1);
+  return '''(()=>{const cfi=${cfi == null ? 'null' : _q(cfi)};const p=$p;if(cfi&&window.LUME?.restoreCfi){try{if(window.LUME.restoreCfi(cfi))return;}catch(e){}}const h=Math.max(0,document.documentElement.scrollHeight-innerHeight);scrollTo(0,h*p);})()''';
+}
+
+String progressCaptureScript(String href) => '''(()=>{if(window.__lumeProgressInstalled)return;window.__lumeProgressInstalled=true;let timer=null;const send=()=>{const h=Math.max(1,document.documentElement.scrollHeight-innerHeight);const p=Math.max(0,Math.min(1,scrollY/h));let cfi=null;try{if(window.LUME?.currentCfi)cfi=window.LUME.currentCfi();}catch(e){}LumeProgress.postMessage(JSON.stringify({href:${_q(href)},cfi:cfi,progression:p}));};addEventListener('scroll',()=>{clearTimeout(timer);timer=setTimeout(send,180)},{passive:true});addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')send()});send();})()''';
+
+String _q(String s) => "'${s.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'";
+
+FILE 33 589
+flutter/lib/readers/epub_cfi.dart
+/// EPUB CFI is treated as an opaque locator, but we reject malformed/control
+/// input before persisting or interpolating it into the bridge.
+String? normalizeEpubCfi(Object? value){
+  if(value is! String) return null;
+  final s=value.trim();
+  if(s.isEmpty || s.length>4096) return null;
+  if(!s.startsWith('epubcfi(') || !s.endsWith(')')) return nu

@@ -1,0 +1,90 @@
+ = await db;
+    final rows = await d.query('progress', where: 'profile_id=? AND edition_id=?', whereArgs: [profileId, editionId], limit: 1);
+    if (rows.isEmpty) return null;
+    final r = rows.first;
+    return {
+      'profileId': profileId,
+      'editionId': editionId,
+      'locator': jsonDecode(r['locator'] as String),
+      'percent': (r['percent'] as num).toDouble(),
+      'clientUpdatedAt': r['updated_at'],
+      'completed': (r['completed'] as int) == 1,
+      'deviceId': r['device_id'],
+    };
+  }
+
+  Future<void> upsertProgress(Map<String, dynamic> p, {bool enqueue = false}) async {
+    final d = await db;
+    await d.transaction((t) async {
+      final accepted=await _upsertProgressTx(t, p);
+      if (enqueue && accepted) {
+        final opId = p['opId'] as String?;
+        if (opId == null || opId.isEmpty) throw ArgumentError('opId required when enqueue=true');
+        final scopeKey = '${p['profileId']}:${p['editionId']}';
+        // Progress is last-write-wins. Keep only the newest unsent operation for
+        // a profile+edition instead of flooding the outbox while pages turn.
+        await t.delete('outbox', where: 'kind=? AND scope_key=?', whereArgs: ['progress', scopeKey]);
+        await t.insert('outbox', {
+          'op_id': opId,
+          'kind': 'progress',
+          'scope_key': scopeKey,
+          'profile_id': p['profileId'],
+          'payload': jsonEncode(p),
+          'created_at': p['clientUpdatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+    });
+  }
+
+  static Future<bool> _upsertProgressTx(DatabaseExecutor t, Map<String, dynamic> p) async {
+    final profileId = p['profileId'] as String;
+    final editionId = p['editionId'] as String;
+    final incomingCompleted = p['completed'] == true;
+    final existing = await t.query('progress', where: 'profile_id=? AND edition_id=?', whereArgs: [profileId, editionId], limit: 1);
+    if (existing.isNotEmpty) {
+      final old = existing.first;
+      final oldCompleted = (old['completed'] as int) == 1;
+      final oldUpdated = old['updated_at'] as int;
+      final newUpdated = (p['clientUpdatedAt'] as num).toInt();
+      if (oldCompleted && !incomingCompleted) return false;
+      if (newUpdated < oldUpdated && !(incomingCompleted && !oldCompleted)) return false;
+    }
+    await t.insert('progress', {
+      'profile_id': profileId,
+      'edition_id': editionId,
+      'locator': jsonEncode(p['locator']),
+      'percent': ((p['percent'] ?? 0) as num).toDouble().clamp(0, 1),
+      'updated_at': (p['clientUpdatedAt'] as num).toInt(),
+      'completed': incomingCompleted ? 1 : 0,
+      'device_id': p['deviceId'],
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    return true;
+  }
+
+  Future<void> repairLegacyOutboxProfiles() async {
+    final d=await db;
+    final rows=await d.query('outbox',where:'profile_id IS NULL');
+    await d.transaction((t) async {
+      for(final r in rows){
+        try{
+          final payload=Map<String,dynamic>.from(jsonDecode(r['payload'] as String));
+          final profileId=payload['profileId'] as String?;
+          if(profileId==null || profileId.isEmpty)throw const FormatException('profileId missing');
+          await t.update('outbox',{'profile_id':profileId},where:'op_id=?',whereArgs:[r['op_id']]);
+        }catch(e){
+          await _quarantineOutboxRowTx(t,r,'legacy repair: $e');
+        }
+      }
+    });
+  }
+
+  static Future<void> _quarantineOutboxRowTx(DatabaseExecutor t,Map<String,Object?> r,String reason) async {
+    await t.insert('outbox_dead_letter',{
+      'op_id':r['op_id'],'profile_id':r['profile_id'],'kind':r['kind'],
+      'payload':r['payload'],'created_at':r['created_at'],
+      'quarantined_at':DateTime.now().millisecondsSinceEpoch,'reason':reason,
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+    await t.delete('outbox',where:'op_id=?',whereArgs:[r['op_id']]);
+  }
+
+  Future<List<Map<String, dynamic>>> loadOutbox(String profileI

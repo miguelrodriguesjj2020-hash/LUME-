@@ -1,0 +1,83 @@
+ IS NOT NULL OR p.edition_id IS NOT NULL
+    """);
+    for(final row in rows){
+      await _archiveEditionIfNeededTx(t,row['id'] as String);
+    }
+  }
+
+  Future<void> applyCatalog(Map<String, dynamic> m) async {
+    _validateCatalogManifest(m);
+    final incomingRevision=(m['revision'] as num?)?.toInt() ?? 0;
+    final currentRevision=await getRevision();
+    if(incomingRevision<currentRevision) throw CatalogIntegrityException('catalog revision regression: $incomingRevision < $currentRevision');
+    final d = await db;
+    await d.transaction((t) async {
+      final full = m['full'] == true;
+      if (full) {
+        await _archiveAllAtRiskEditionsTx(t);
+        await t.delete('editions');
+        await t.delete('works');
+      }
+      for (final raw in (m['works'] as List? ?? const [])) {
+        final w = Map<String, dynamic>.from(raw);
+        await t.insert('works', {
+          'id': w['id'],
+          'title': w['displayTitle'] ?? w['canonicalTitle'],
+          'type': w['type'],
+          'json': jsonEncode(w),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+        final incomingEditionIds = <String>{};
+        for (final er in (w['editions'] as List? ?? const [])) {
+          final e = Map<String, dynamic>.from(er);
+          incomingEditionIds.add(e['id'] as String);
+          await t.insert('editions', {
+            'id': e['id'],
+            'work_id': w['id'],
+            'json': jsonEncode(e),
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+          await t.delete('retired_editions',where:'edition_id=?',whereArgs:[e['id']]);
+        }
+        // A work payload is authoritative for its edition membership. This prevents
+        // removed/renamed volumes from surviving forever after an incremental update.
+        final existing = await t.query('editions', columns: ['id'], where: 'work_id=?', whereArgs: [w['id']]);
+        for (final row in existing) {
+          final id = row['id'] as String;
+          if (!incomingEditionIds.contains(id)) {
+            await _archiveEditionIfNeededTx(t,id);
+            await t.delete('editions', where: 'id=?', whereArgs: [id]);
+          }
+        }
+      }
+      for (final tr in (m['tombstones'] as List? ?? const [])) {
+        final x = Map<String, dynamic>.from(tr);
+        if (x['kind'] == 'work') {
+          final doomed=await t.query('editions',columns:['id'],where:'work_id=?',whereArgs:[x['id']]);
+          for(final row in doomed){await _archiveEditionIfNeededTx(t,row['id'] as String);}
+          await t.delete('editions', where: 'work_id=?', whereArgs: [x['id']]);
+          await t.delete('works', where: 'id=?', whereArgs: [x['id']]);
+        } else if (x['kind'] == 'edition') {
+          await _archiveEditionIfNeededTx(t,x['id'] as String);
+          await t.delete('editions', where: 'id=?', whereArgs: [x['id']]);
+        }
+      }
+      await t.insert('meta', {'k': 'revision', 'v': '${m['revision'] ?? 0}'}, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> listWorks({String? type}) async {
+    final d = await db;
+    final rows = await d.query('works', where: type == null ? null : 'type=?', whereArgs: type == null ? null : [type], orderBy: 'title COLLATE NOCASE');
+    return rows.map((r) => Map<String, dynamic>.from(jsonDecode(r['json'] as String))).toList();
+  }
+
+  Future<Map<String, dynamic>?> editionJson(String editionId) async {
+    final d = await db;
+    final rows = await d.query('editions', columns: ['json'], where: 'id=?', whereArgs: [editionId], limit: 1);
+    if (rows.isNotEmpty) return Map<String, dynamic>.from(jsonDecode(rows.first['json'] as String));
+    final retired=await d.query('retired_editions',columns:['json'],where:'edition_id=?',whereArgs:[editionId],limit:1);
+    if(retired.isEmpty)return null;
+    return Map<String,dynamic>.from(jsonDecode(retired.first['json'] as String));
+  }
+
+  Future<Map<String, dynamic>?> getProgress(String profileId, String editionId) async {
+    final d

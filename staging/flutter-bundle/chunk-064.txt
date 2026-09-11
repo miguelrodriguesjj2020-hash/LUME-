@@ -1,0 +1,50 @@
+tentSyncBackoff {
+  final LumeDb db;
+  final Duration baseDelay;
+  final Duration maxDelay;
+  final Random _random;
+  PersistentSyncBackoff(this.db,{this.baseDelay=const Duration(seconds:1),this.maxDelay=const Duration(minutes:2),Random? random}):_random=random??Random();
+
+  Future<Duration?> remaining(String profileId,{DateTime? now}) async {
+    final row=await db.getSyncRetry(profileId);
+    final at=(row?['next_retry_at'] as num?)?.toInt();
+    if(at==null)return null;
+    final current=(now??DateTime.now()).millisecondsSinceEpoch;
+    if(at<=current)return Duration.zero;
+    return Duration(milliseconds:at-current);
+  }
+
+  Future<Duration> recordFailure(String profileId,Object error,{Duration? retryAfter,DateTime? now}) async {
+    final row=await db.getSyncRetry(profileId);
+    final attempt=((row?['attempt'] as num?)?.toInt()??0)+1;
+    final raw=min(maxDelay.inMilliseconds,baseDelay.inMilliseconds*(1 << min(attempt-1,20))).toInt();
+    final jitter=(raw*0.20*_random.nextDouble()).round();
+    final delay=retryAfter!=null && retryAfter<=maxDelay?retryAfter:Duration(milliseconds:raw+jitter);
+    final next=(now??DateTime.now()).add(delay).millisecondsSinceEpoch;
+    await db.saveSyncRetry(profileId,attempt:attempt,nextRetryAt:next,lastError:error.toString());
+    return delay;
+  }
+
+  Future<void> recordSuccess(String profileId)=>db.clearSyncRetry(profileId);
+}
+
+FILE 34 1482
+flutter/lib/services/prefetch.dart
+import 'dart:async';
+import 'dart:io';
+import 'media_cache.dart';
+
+class PrefetchWindow {
+  final int behind;
+  final int ahead;
+  const PrefetchWindow({this.behind = 1, this.ahead = 3});
+
+  List<int> around(int current, int length, {int direction = 1}) {
+    if (length <= 0) return const [];
+    final result = <int>[];
+    final forward = direction >= 0;
+    final firstCount = forward ? ahead : behind;
+    final secondCount = forward ? behind : ahead;
+    for (var d = 1; d <= firstCount; d++) {
+      final i = current + (forward ? d : -d);
+      if (i >= 

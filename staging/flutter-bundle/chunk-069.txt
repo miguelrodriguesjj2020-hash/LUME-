@@ -1,0 +1,66 @@
+retryAfter!=null && retryAfter<=maxDelay)return retryAfter;
+    final exponent=attempt<0?0:(attempt>20?20:attempt);
+    final factor=1 << exponent;
+    final raw=min(maxDelay.inMilliseconds,baseDelay.inMilliseconds*factor).toInt();
+    final jitter=(raw*0.25*_random.nextDouble()).round();
+    return Duration(milliseconds:raw+jitter);
+  }
+
+  Future<T> run<T>(Future<T> Function() operation,{Duration? retryAfter}) async {
+    Object? last;
+    for(var attempt=0;attempt<maxAttempts;attempt++){
+      try{return await operation();}catch(e){
+        last=e;
+        if(e is SessionExpiredException || !isTransient(e) || attempt==maxAttempts-1)rethrow;
+        final serverDelay=e is ApiException?e.retryAfter:null;
+        await Future<void>.delayed(delayFor(attempt,retryAfter:serverDelay??retryAfter));
+      }
+    }
+    throw last!;
+  }
+}
+
+FILE 39 748
+flutter/lib/services/session_vault.dart
+import 'api.dart';
+
+/// Storage boundary for authenticated session state.
+///
+/// The default implementation is intentionally memory-only. A platform-secure
+/// implementation (Android Keystore / flutter_secure_storage) can be bound
+/// after plugin APIs are compiled and validated on Android.
+abstract interface class SessionVault {
+  Future<LumeSession?> load();
+  Future<void> save(LumeSession session);
+  Future<void> clear();
+}
+
+class MemorySessionVault implements SessionVault {
+  LumeSession? _session;
+
+  @override
+  Future<LumeSession?> load() async => _session?.copy();
+
+  @override
+  Future<void> save(LumeSession session) async {
+    _session = session.copy();
+  }
+
+  @override
+  Future<void> clear() async {
+    _session = null;
+  }
+}
+
+FILE 40 1713
+flutter/lib/services/storage_policy.dart
+import 'dart:io';
+import '../data/database.dart';
+
+class StoragePolicyResult {
+  final int freedBytes; final List<String> removedEditionIds;
+  const StoragePolicyResult(this.freedBytes,this.removedEditionIds);
+}
+
+/// Persistent disk-cache LRU + reservation accounting. Pinned assets are never
+/// auto-e

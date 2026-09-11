@@ -1,0 +1,37 @@
+       'editionId':editionId,'state':'ready','localPath':target.path,'tempPath':null,
+          'expectedBytes':row['expected_bytes'],'receivedBytes':await target.length(),
+          'etag':row['etag'],'sha256':row['sha256'],'sourceTag':row['source_tag'],
+          'pinned':(asset?['pinned'] as num?)?.toInt()==1,
+          'retryCount':0,'lastError':null,'lastAccessedAt':DateTime.now().millisecondsSinceEpoch,
+        });
+        await db.recordMediaRevalidation(editionId,remoteSourceTag:row['source_tag'] as String?,needsUpdate:false);
+        await db.deleteMediaReplacement(editionId);
+        finalized++;
+        continue;
+      }
+
+      // A missing target with a previous verified copy means the process died
+      // in the swap window. Roll back first; availability beats freshness.
+      if(!await target.exists() && await backup.exists()){
+        await backup.rename(target.path);
+        if(await staged.exists()) await staged.delete();
+        await db.upsertMediaReplacement({
+          'editionId':editionId,'state':'failed','tempPath':part.path,
+          'expectedBytes':row['expected_bytes'],'receivedBytes':await part.exists()?await part.length():0,
+          'etag':row['etag'],'sha256':row['sha256'],'sourceTag':row['source_tag'],
+          'stagedPath':staged.path,'backupPath':backup.path,'phase':'rolled_back',
+          'lastError':'recovered process death during atomic swap; previous READY restored',
+        });
+        rolledBack++;
+        if(await part.exists()) partial++;
+        continue;
+      }
+
+      // If the old target still exists, never replace it during recovery. A
+      // verified staged successor remains discardable and can be requested
+      // again explicitly; this avoids guessing after a crash.
+      if(await target.exists()){
+        if(await backup.exists()) await backup.delete();
+        if(await staged.exists()) await staged.delete();
+        await db.upsertMediaReplacement({
+          'editionId':editionId,'state':'failed','tempPath

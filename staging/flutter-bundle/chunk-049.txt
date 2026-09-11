@@ -1,0 +1,60 @@
+lutter/lib/services/media_open_coordinator.dart
+import 'dart:convert';
+import 'dart:io';
+import 'package:path/path.dart' as p;
+import '../data/database.dart';
+import '../models/catalog.dart';
+import '../models/progress.dart';
+import 'api.dart';
+import 'download.dart';
+import 'epub_preparer.dart';
+import 'cbz_preparer.dart';
+import 'media_cache.dart';
+import 'media_descriptor.dart';
+import 'prefetch.dart';
+
+class OpenedMedia {
+  final String localPath;
+  final PreparedEpub? epub;
+  final String? epubEntryPath;
+  final PreparedCbz? cbz;
+  final ReadingLocator? locator;
+  const OpenedMedia({required this.localPath, this.epub, this.epubEntryPath, this.cbz, this.locator});
+}
+
+class MediaOpenCoordinator {
+  final LumeDb db;
+  final LumeApi api;
+  final DownloadManager downloads;
+  final EpubPreparer epubPreparer;
+  final CbzPreparer cbzPreparer;
+  final MediaCache cache;
+  final Directory mediaDirectory;
+  final Directory preparedDirectory;
+
+  MediaOpenCoordinator({
+    required this.db,
+    required this.api,
+    required this.downloads,
+    required this.epubPreparer,
+    required this.cbzPreparer,
+    required this.cache,
+    required this.mediaDirectory,
+    required this.preparedDirectory,
+  });
+
+  Future<OpenedMedia> open({required Edition edition, String? profileId}) async {
+    final asset = await db.getOfflineAsset(edition.id);
+    final readyFile = await _readyFile(asset);
+    // Strong offline-first invariant: a verified READY asset is sufficient to
+    // read. Opening local media must never require a live session/network.
+    // Remote freshness is handled by catalog/sync and explicit revalidation,
+    // not on the critical first-paint path.
+    late final File local;
+    late final String sourceTag;
+    if (readyFile != null) {
+      local = readyFile;
+      sourceTag = (asset?['source_tag'] as String?) ?? 'offline:${edition.id}';
+    } else {
+      final descriptor = MediaDescriptor.fromJson(await api.media(edition.id));
+      local = await _ensureLocal(ed

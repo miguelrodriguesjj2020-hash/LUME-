@@ -1,0 +1,39 @@
+e');
+      }
+      total += entry.size;
+      if (total > maxUncompressedBytes) throw const EpubPrepareException('archive too large');
+      final outPath = p.normalize(p.absolute(p.join(destination.path, name)));
+      if (!(outPath == rootCanonical || p.isWithin(rootCanonical, outPath))) {
+        throw EpubPrepareException('path escapes destination: $name');
+      }
+      if (entry.isFile) {
+        final out = File(outPath)..createSync(recursive: true);
+        final data = entry.content;
+        if (data is List<int>) out.writeAsBytesSync(data, flush: false);
+      } else {
+        Directory(outPath).createSync(recursive: true);
+      }
+    }
+    input.close();
+    await _sanitizeLocalResources(destination);
+
+    final container = File(p.join(destination.path, 'META-INF', 'container.xml'));
+    if (!await container.exists()) throw const EpubPrepareException('container.xml missing');
+    final cxml = await container.readAsString();
+    final rootfile = RegExp(r'full-path\s*=\s*["\']([^"\']+)["\']').firstMatch(cxml)?.group(1);
+    if (rootfile == null || rootfile.isEmpty) throw const EpubPrepareException('rootfile missing');
+    final opfFile = File(p.join(destination.path, rootfile));
+    if (!await opfFile.exists()) throw const EpubPrepareException('OPF missing');
+    final opf = await opfFile.readAsString();
+    final manifest = <String, String>{};
+    for (final m in RegExp(r'<item\b[^>]*\bid=["\']([^"\']+)["\'][^>]*\bhref=["\']([^"\']+)["\'][^>]*/?>', caseSensitive: false).allMatches(opf)) {
+      manifest[m.group(1)!] = m.group(2)!;
+    }
+    final opfDir = p.dirname(rootfile);
+    final spine = <String>[];
+    for (final m in RegExp(r'<itemref\b[^>]*\bidref=["\']([^"\']+)["\'][^>]*/?>', caseSensitive: false).allMatches(opf)) {
+      final href = manifest[m.group(1)!];
+      if (href == null) continue;
+      final decoded = Uri.decodeComponent(href.split('#').first);
+      final rel = p.normalize(p.join(opfDir, decoded));
+      if (rel.startsWith('..') || p

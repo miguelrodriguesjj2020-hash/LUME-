@@ -1,0 +1,49 @@
+':part.path,
+          'expectedBytes':row['expected_bytes'],'receivedBytes':await part.exists()?await part.length():0,
+          'etag':row['etag'],'sha256':row['sha256'],'sourceTag':row['source_tag'],
+          'stagedPath':staged.path,'backupPath':backup.path,'phase':stagedIsSuccessor?'staged_interrupted':'interrupted',
+          'lastError':'replacement interrupted; previous READY retained',
+        });
+        if(await part.exists()) partial++;
+      }
+    }
+
+    // Remove only unreferenced stale swap artifacts. Partial files are retained
+    // for seven days to allow resume; older orphan partials are reclaimed.
+    if(await mediaDirectory.exists()){
+      final cutoff=DateTime.now().subtract(const Duration(days:7));
+      await for(final entity in mediaDirectory.list(recursive:false,followLinks:false)){
+        if(entity is! File || referenced.contains(entity.path)) continue;
+        final name=entity.path;
+        if(name.endsWith('.previous') || name.endsWith('.replacement.ready') || name.endsWith('.failed-successor') || name.endsWith('.previous-download')){
+          await entity.delete(); cleaned++;
+        }else if(name.endsWith('.replacement.part')){
+          final stat=await entity.stat();
+          if(stat.modified.isBefore(cutoff)){await entity.delete();cleaned++;}
+        }
+      }
+    }
+    return ReplacementRecoveryReport(finalized:finalized,rolledBack:rolledBack,preservedPartial:partial,cleanedOrphans:cleaned);
+  }
+}
+
+FILE 43 1494
+flutter/lib/services/media_revalidator.dart
+import '../data/database.dart';
+import 'api.dart';
+import 'media_descriptor.dart';
+
+class MediaRevalidationResult {
+  final bool checked;
+  final bool needsUpdate;
+  final String? remoteSourceTag;
+  const MediaRevalidationResult({required this.checked,required this.needsUpdate,this.remoteSourceTag});
+}
+
+class MediaRevalidator {
+  final LumeDb db;
+  final LumeApi api;
+  MediaRevalidator(this.db,this.api);
+
+  Future<MediaRevalidationResult> check(String editionId) async {
+    f

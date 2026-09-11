@@ -1,0 +1,41 @@
+tle: Text(work.title), subtitle: Text('${editions.length} edições disponíveis')),
+      for (final e in editions) Builder(builder:(context){
+        final unsupportedCbr=e.format.toLowerCase()=='cbr';
+        return ListTile(
+          leading: Icon(unsupportedCbr ? Icons.lock_outline : Icons.description_outlined),
+          title: Text(e.volume != null ? 'Volume ${_n(e.volume!)}' : e.chapter != null ? 'Capítulo ${_n(e.chapter!)}' : e.fileName),
+          subtitle: Text(unsupportedCbr
+              ? 'CBR · indisponível até validação RAR segura'
+              : '${e.format.toUpperCase()} · ${e.language}'),
+          trailing: Wrap(mainAxisSize:MainAxisSize.min,children:[
+            IconButton(
+              tooltip:unsupportedCbr ? 'CBR ainda não suportado' : 'Baixar para leitura offline',
+              icon:Icon(unsupportedCbr ? Icons.block : Icons.download_outlined),
+              onPressed:unsupportedCbr ? null : () async {
+                await onDownload(e);
+                if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Adicionado à fila de downloads')));
+              },
+            ),
+            Icon(unsupportedCbr ? Icons.lock_outline : Icons.chevron_right),
+          ]),
+          onTap: unsupportedCbr
+              ? ()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('CBR/RAR ainda não possui leitor validado na LUME.')))
+              : ()=>Navigator.pop(context,e),
+        );
+      }),
+    ]));
+  }
+  String _n(double n) => n == n.roundToDouble() ? n.toInt().toString() : n.toString();
+}
+
+FILE 34 3362
+flutter/lib/ui/downloads_page.dart
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../services/app_services.dart';
+import '../services/recoverable_downloads.dart';
+
+class DownloadsPage extends StatefulWidget {
+  final AppServices services;
+  const DownloadsPage({super.key,required this.services});
+  @override State<DownloadsPage> createState()=>_DownloadsPag

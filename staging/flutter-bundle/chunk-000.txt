@@ -1,0 +1,111 @@
+LUME_TEXT_BUNDLE_V1
+FILE 32 2205
+flutter/lib/cache/lru_cache.dart
+import 'dart:collection';
+
+/// Byte-budgeted LRU for small hot objects. Large media files stay on disk.
+class LruCache<K, V> {
+  final int maxBytes;
+  final int Function(V value) sizeOf;
+  final LinkedHashMap<K, V> _items = LinkedHashMap<K, V>();
+  int _bytes = 0;
+
+  LruCache({required this.maxBytes, required this.sizeOf}) {
+    if (maxBytes <= 0) throw ArgumentError.value(maxBytes, 'maxBytes');
+  }
+
+  int get length => _items.length;
+  int get bytes => _bytes;
+
+  V? get(K key) {
+    final value = _items.remove(key);
+    if (value == null) return null;
+    _items[key] = value; // most recently used
+    return value;
+  }
+
+  void put(K key, V value) {
+    final cost = sizeOf(value);
+    if (cost < 0) throw StateError('negative cache cost');
+    final old = _items.remove(key);
+    if (old != null) _bytes -= sizeOf(old);
+    if (cost > maxBytes) return; // never let one huge object evict everything
+    _items[key] = value;
+    _bytes += cost;
+    _evict();
+  }
+
+  V? remove(K key) {
+    final value = _items.remove(key);
+    if (value != null) _bytes -= sizeOf(value);
+    return value;
+  }
+
+  void clear() {
+    _items.clear();
+    _bytes = 0;
+  }
+
+  void _evict() {
+    while (_bytes > maxBytes && _items.isNotEmpty) {
+      final key = _items.keys.first;
+      final value = _items.remove(key)!;
+      _bytes -= sizeOf(value);
+    }
+  }
+}
+
+/// Two-tier cache coordinator. Disk is authoritative; RAM is only an accelerator.
+class HybridReadCache {
+  final LruCache<String, String> xhtml;
+  final LruCache<String, List<int>> pageBytes;
+
+  HybridReadCache({int xhtmlBytes = 8 * 1024 * 1024, int pageBytesBudget = 24 * 1024 * 1024})
+      : xhtml = LruCache(maxBytes: xhtmlBytes, sizeOf: (s) => s.length * 2),
+        pageBytes = LruCache(maxBytes: pageBytesBudget, sizeOf: (b) => b.length);
+
+  void clearEdition(String editionId) {
+    // Keys are namespaced as editionId:path. Iterate on snapshots to avoid mutation issues.
+    for (final key in List<String>.from(xhtml._items.keys)) {
+      if (key.startsWith('$editionId:')) xhtml.remove(key);
+    }
+    for (final key in List<String>.from(pageBytes._items.keys)) {
+      if (key.startsWith('$editionId:')) pageBytes.remove(key);
+    }
+  }
+}
+
+FILE 30 36099
+flutter/lib/data/database.dart
+import 'dart:convert';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+
+class CatalogIntegrityException implements Exception {
+  final String message;
+  const CatalogIntegrityException(this.message);
+  @override String toString()=>'CatalogIntegrityException: $message';
+}
+
+void _validateCatalogManifest(Map<String,dynamic> m){
+  final revision=m['revision'];
+  if(revision is! int || revision<0) throw const CatalogIntegrityException('invalid revision');
+  if(m['works'] is! List) throw const CatalogIntegrityException('works must be an array');
+  final workIds=<String>{};
+  final editionIds=<String>{};
+  final tombstones=<String>{};
+  final works=m['works'] as List? ?? const [];
+  for(final raw in works){
+    final w=Map<String,dynamic>.from(raw as Map);
+    final wid=w['id'] as String?;
+    if(wid==null || wid.trim().isEmpty) throw const CatalogIntegrityException('work id missing');
+    if(!workIds.add(wid)) throw CatalogIntegrityException('duplicate work id: $wid');
+    final type=w['type'] as String?;
+    if(!const {'book','hq','manga','graphic_novel'}.contains(type)) throw CatalogIntegrityException('invalid work type for $wid: $type');
+    final title=(w['displayTitle']??w['canonicalTitle']) as String?;
+    if(title==null || title.trim().isEmpty) throw CatalogIntegrityException('work title missing for $wid');
+    if(w['editions'] is! List) throw CatalogIntegrityException('editions must be an array for $wid');
+    for(final key in const ['sections','editorialSections','tags']){
+      final value=w[key];
+      if(value!=null && (value is! List || value.any((x)=>x is! String || x.trim().isEmpty))){
+        throw CatalogIntegrityExcepti

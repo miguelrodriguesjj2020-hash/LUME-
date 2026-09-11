@@ -1,0 +1,65 @@
+ll;
+  for(final unit in s.codeUnits){
+    if(unit<0x20 || unit==0x7f) return null;
+  }
+  var depth=0;
+  for(final r in s.runes){
+    if(r==0x28) depth++;
+    if(r==0x29){ depth--; if(depth<0)return null; }
+  }
+  return depth==0?s:null;
+}
+
+FILE 41 5740
+flutter/lib/readers/epub_reader_page.dart
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:webview_flutter/webview_flutter.dart';
+import '../models/progress.dart';
+import 'epub_bridge.dart';
+import 'epub_cfi.dart';
+
+class EpubReaderPage extends StatefulWidget {
+  final Uri localEntry;
+  final String rootPath;
+  final List<String> spineEntries;
+  final EpubLocator initial;
+  final ValueChanged<EpubLocator>? onProgress;
+  final bool fixedLayout;
+  const EpubReaderPage({
+    super.key,
+    required this.localEntry,
+    required this.rootPath,
+    required this.spineEntries,
+    required this.initial,
+    this.onProgress,
+    this.fixedLayout = false,
+  });
+  @override State<EpubReaderPage> createState() => _EpubReaderPageState();
+}
+
+class _EpubReaderPageState extends State<EpubReaderPage> {
+  late final WebViewController controller;
+  bool initialRestored = false;
+  int currentSpineIndex = 0;
+
+  bool _isAllowedLocal(Uri uri) {
+    if (uri.scheme == 'about') return true;
+    if (uri.scheme != 'file') return false;
+    final root = p.normalize(p.absolute(widget.rootPath));
+    final candidate = p.normalize(p.absolute(uri.toFilePath()));
+    return candidate == root || p.isWithin(root, candidate);
+  }
+
+  String _hrefFor(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'file') return widget.initial.href;
+    final rel = p.relative(uri.toFilePath(), from: widget.rootPath).replaceAll('\\', '/');
+    return rel == '.' ? widget.initial.href : rel;
+  }
+
+  String _normalizeRel(String value) =>
+      p.normalize(Uri.decodeComponent(value.split('#').first)).replaceAll('\\', '/');
+
+  List<String> get _relativeSpine => widget.spineE

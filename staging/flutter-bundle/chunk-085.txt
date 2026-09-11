@@ -1,0 +1,69 @@
+loads=v);}),
+    ]),
+  );
+}
+
+FILE 20 339
+flutter/pubspec.yaml
+name: lume
+version: 0.35.0+35
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  crypto: ^3.0.3
+  archive: ^4.2.0
+  pdfx: ^2.11.0
+  webview_flutter: ^4.7.0
+  connectivity_plus: ^6.1.5
+
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+FILE 32 782
+flutter/test/lru_cache_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lume/cache/lru_cache.dart';
+
+void main() {
+  test('LRU evicts least recently used item by bytes', () {
+    final cache=LruCache<String,List<int>>(maxBytes:6,sizeOf:(v)=>v.length);
+    cache.put('a',[1,2]);
+    cache.put('b',[1,2]);
+    expect(cache.get('a'),isNotNull); // a becomes most recent
+    cache.put('c',[1,2,3]);
+    expect(cache.get('b'),isNull);
+    expect(cache.get('a'),isNotNull);
+    expect(cache.get('c'),isNotNull);
+  });
+
+  test('oversized item never flushes hot cache', () {
+    final cache=LruCache<String,List<int>>(maxBytes:4,sizeOf:(v)=>v.length);
+    cache.put('a',[1,2]);
+    cache.put('huge',[1,2,3,4,5]);
+    expect(cache.get('a'),isNotNull);
+    expect(cache.get('huge'),isNull);
+  });
+}
+
+FILE 35 963
+flutter/test/pdf_prefetch_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lume/services/pdf_prefetch.dart';
+
+void main(){
+  test('directional prefetch is aggressive only with memory headroom',(){
+    const low=PdfPrefetchTelemetry(hotBytes:2,budgetBytes:10,renderedPages:1,evictions:0);
+    const mid=PdfPrefetchTelemetry(hotBytes:8,budgetBytes:10,renderedPages:4,evictions:1);
+    const high=PdfPrefetchTelemetry(hotBytes:10,budgetBytes:10,renderedPages:5,evictions:2);
+    expect(pdfPrefetchWindow(page:5,pageCount:20,direction:1,telemetry:low),[6,7,4]);
+    expect(pdfPrefetchWindow(page:5,pageCount:20,direction:1,telemetry:mid),[6]);
+    expect(pdfPrefetchWindow(page:5,pageCount:20,direction:1,telemetry:high),isEmpty);
+  });

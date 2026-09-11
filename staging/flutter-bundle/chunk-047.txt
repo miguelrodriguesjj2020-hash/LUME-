@@ -1,0 +1,51 @@
+seSensitive: false), '')
+            .replaceAllMapped(RegExp(r'''url\(\s*(["']?)(?:https?|file|content|javascript):[^\)]*\)''', caseSensitive: false), (_) => 'url(about:blank)')
+            .replaceAll(RegExp(r'javascript\s*:', caseSensitive: false), 'about:blank:')
+            .replaceAllMapped(RegExp(r'''((?:xlink:)?href|src)\s*=\s*(["'])(?:https?|file|content|javascript):[^"']*\2''', caseSensitive: false), (m) => '${m.group(1)}=${m.group(2)}about:blank${m.group(2)}')
+            .replaceAllMapped(RegExp(r'''((?:xlink:)?href|src)\s*=\s*(["'])/[^"']*\2''', caseSensitive: false), (m) => '${m.group(1)}=${m.group(2)}about:blank${m.group(2)}');
+      }
+      await entity.writeAsString(text, flush: false);
+    }
+  }
+
+}
+
+FILE 44 1320
+flutter/lib/services/library_repository.dart
+import '../data/database.dart';
+import '../models/catalog.dart';
+
+class LibraryRepository {
+  final LumeDb db;
+  LibraryRepository(this.db);
+
+  Future<List<Work>> listByType(String type) async {
+    final rows = await db.listWorks(type: type);
+    return rows.map(Work.fromJson).toList(growable: false);
+  }
+
+  Future<List<Work>> listByTypeAndSection(String type,String? section) async {
+    final works=await listByType(type);
+    if(section==null || section.isEmpty)return works;
+    final normalized=LibrarySection.normalize(section);
+    return works.where((w)=>w.sections.contains(normalized)).toList(growable:false);
+  }
+
+  Future<List<String>> sectionsForType(String type) async {
+    final works=await listByType(type);
+    final found=<String>{};
+    for(final w in works){found.addAll(w.sections);}
+    const priority=[
+      LibrarySection.classics,
+      LibrarySection.recommendations,
+      LibrarySection.bestWritten,
+      LibrarySection.essentials,
+      LibrarySection.recent,
+    ];
+    final result=<String>[];
+    for(final p in priority){if(found.remove(p))result.add(p);}
+    result.addAll(found.toList()..sort());
+    return result;
+  }
+
+  Future<List<Work>> books() => listByType('book');

@@ -1,0 +1,61 @@
+s!.profileId,mode:SyncRunMode.foreground).catchError((_){return null;});
+      // Advisory stale-while-revalidate: never blocks local reading or demotes READY assets.
+      services!.revalidateRecentMedia().catchError((_){return null;});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context)=>MaterialApp(
+    navigatorKey:navigatorKey,
+    debugShowCheckedModeBanner:false,
+    title:'LUME',
+    theme:ThemeData(useMaterial3:true),
+    home:services==null
+      ? LoginPage(api:api,onAuthenticated:authenticated,notice:loginNotice)
+      : CatalogPage(services:services!),
+  );
+}
+
+FILE 31 2709
+flutter/lib/models/catalog.dart
+class Edition {
+  final String id, workId, format, sourceFileId, fileName, language;
+  final int? byteSize;
+  final double? volume, chapter;
+  const Edition({
+    required this.id,
+    required this.workId,
+    required this.format,
+    required this.sourceFileId,
+    required this.fileName,
+    this.language='unknown',
+    this.byteSize,
+    this.volume,
+    this.chapter,
+  });
+  factory Edition.fromJson(String workId, Map<String,dynamic> j)=>Edition(
+    id:j['id'],
+    workId:workId,
+    format:j['format'],
+    sourceFileId:j['sourceFileId'],
+    fileName:j['fileName'],
+    language:j['language']??'unknown',
+    byteSize:j['byteSize'],
+    volume:(j['volumeNumber'] as num?)?.toDouble(),
+    chapter:(j['chapterNumber'] as num?)?.toDouble(),
+  );
+}
+
+class LibrarySection {
+  static const classics='Grandes Clássicos';
+  static const recommendations='Recomendações';
+  static const bestWritten='Melhores escritos';
+  static const essentials='Essenciais';
+  static const recent='Adicionados recentemente';
+
+  static String normalize(String raw){
+    final x=raw.trim().toLowerCase();
+    return switch(x){
+      'grandes clássicos' || 'grandes classicos' || 'classicos' || 'clássicos' => classics,
+      'recomendações' || 'recomendacoes' || 'recomendados' => recommendations,
+      'melhores escritos' || 'melhor escritos' || 'best written' => bestWr

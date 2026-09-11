@@ -1,0 +1,13 @@
+acementCoordinator');
+    }
+
+    // Persist the reservation before evaluating the shared disk budget. This
+    // lets concurrent tasks see each other's remaining expected bytes.
+    await _persist(editionId, OfflineState.queued, target, part, expectedBytes, localBytes, effectiveEtag, expectedSha256, sourceTag, pinned: pinned, retryCount: retryCount);
+    onProgress?.call(editionId, OfflineState.queued, localBytes, expectedBytes);
+    try {
+      if (expectedBytes != null && storagePolicy != null) {
+        await storagePolicy!.ensureBudget();
+      }
+      for (var attempt = 0; attempt < 2; attempt++) {
+        control

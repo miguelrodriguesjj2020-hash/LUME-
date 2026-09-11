@@ -1,0 +1,52 @@
+didate)) || !await File(packageCandidate).exists()){
+            valid=false;
+          }
+          if (valid) {
+            return PreparedEpub(root, packagePath, spine, j['fixedLayout'] == true);
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (await root.exists()) await root.delete(recursive: true);
+    cache.hot.clearEdition(edition.id);
+    final prepared = await epubPreparer.prepare(epub: epub, destination: root);
+    await marker.writeAsString(jsonEncode({
+      'sourceTag': sourceTag,
+      'packagePath': prepared.packagePath,
+      'spine': prepared.spine,
+      'fixedLayout': prepared.fixedLayout,
+    }), flush: true);
+    return prepared;
+  }
+
+  Future<PreparedCbz> _ensurePreparedCbz(Edition edition,File cbz,String sourceTag) async {
+    final root=Directory(p.join(preparedDirectory.path,'cbz-${edition.id}'));
+    final marker=File(p.join(root.path,'.lume-cbz.json'));
+    if(await marker.exists()){
+      try{
+        final j=Map<String,dynamic>.from(jsonDecode(await marker.readAsString()));
+        if(j['sourceTag']==sourceTag){
+          final pages=List<String>.from(j['pages']??const[]);
+          final rootCanonical=p.normalize(p.absolute(root.path));
+          var valid=pages.isNotEmpty;
+          for(final page in pages){
+            final candidate=p.normalize(p.absolute(page));
+            if(!(candidate==rootCanonical || p.isWithin(rootCanonical,candidate)) || !await File(candidate).exists()){
+              valid=false;break;
+            }
+          }
+          if(valid)return PreparedCbz(root,List.unmodifiable(pages));
+        }
+      }catch(_){}
+    }
+    if(await root.exists())await root.delete(recursive:true);
+    final prepared=await cbzPreparer.prepare(cbz:cbz,destination:root);
+    await cbzPreparer.writeMarker(prepared,marker,sourceTag);
+    return prepared;
+  }
+
+  ReadingLocator? _locatorFromProgress(Map<String, dynamic>? p) {
+    final raw = p?['locator'];
+    if (raw is! Map) return null;
+    final j = Map<String, dynamic>.from

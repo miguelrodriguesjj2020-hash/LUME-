@@ -1,0 +1,61 @@
+
+
+  test('render budget never admits beyond cap',(){
+    final b=PdfRenderBudget(maxBytes:100);
+    expect(b.canAdmit(60),isTrue); b.admitted(60);
+    expect(b.canAdmit(50),isFalse);
+    b.evicted(30); expect(b.canAdmit(50),isTrue);
+  });
+}
+
+FILE 35 877
+flutter/test/retry_policy_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lume/services/api.dart';
+import 'package:lume/services/retry_policy.dart';
+
+void main(){
+  test('transient HTTP statuses are retryable but auth is not',(){
+    final p=RetryPolicy(maxAttempts:3);
+    expect(p.isTransient(const ApiException('sync',429)),isTrue);
+    expect(p.isTransient(const ApiException('sync',503)),isTrue);
+    expect(p.isTransient(const ApiException('sync',403)),isFalse);
+    expect(p.isTransient(const SessionExpiredException('sync')),isFalse);
+  });
+
+  test('backoff is bounded',(){
+    final p=RetryPolicy(baseDelay:const Duration(milliseconds:100),maxDelay:const Duration(seconds:2));
+    for(var i=0;i<20;i++){
+      expect(p.delayFor(i).inMilliseconds,lessThanOrEqualTo(2500)); // 2s + <=25% jitter
+      expect(p.delayFor(i).inMilliseconds,greaterThanOrEqualTo(100));
+    }
+  });
+}
+
+FILE 30 730
+flutter/test/session_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lume/services/api.dart';
+import 'package:lume/services/session_vault.dart';
+
+void main(){
+  test('expired session is not authenticated',(){
+    final s=LumeSession()
+      ..token='t'
+      ..profileId='p'
+      ..expiresAt=DateTime.now().millisecondsSinceEpoch-1;
+    expect(s.expired,isTrue);
+    expect(s.authenticated,isFalse);
+  });
+
+  test('memory vault copies session instead of aliasing it',() async{
+    final vault=MemorySessionVault();
+    final s=LumeSession()..token='one'..profileId='p';
+    await vault.save(s);
+    s.token='two';
+    expect((await vault.load())!.token,'one');
+    await vault.clear();
+    expect(await vault.load(),isNull);
+  });
+}
+

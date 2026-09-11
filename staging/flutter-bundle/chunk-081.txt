@@ -1,0 +1,44 @@
+t Icon(Icons.pause),onPressed:()=>_act(() async=>widget.services.offlineDownloads.pause(id))),
+            if(state=='paused')IconButton(tooltip:'Retomar',icon:const Icon(Icons.play_arrow),onPressed:()=>_act(()=>widget.services.offlineDownloads.resume(id))),
+            if(state=='failed')IconButton(tooltip:'Tentar novamente',icon:const Icon(Icons.refresh),onPressed:()=>_act(()=>widget.services.offlineDownloads.retry(id))),
+            if(state!='ready')IconButton(tooltip:'Cancelar',icon:const Icon(Icons.close),onPressed:()=>_act(() async=>widget.services.offlineDownloads.cancel(id))),
+          ]),
+        );
+      }));
+    }),
+  );
+  String _label(String s)=>switch(s){'queued'=>'Na fila','downloading'=>'Baixando','verifying'=>'Verificando','ready'=>'Disponível offline','paused'=>'Pausado','failed'=>'Falhou',_=>s};
+  IconData _icon(String s)=>switch(s){'ready'=>Icons.offline_pin,'failed'=>Icons.error_outline,'paused'=>Icons.pause_circle_outline,'downloading'=>Icons.downloading,_=>Icons.schedule};
+}
+
+FILE 30 2415
+flutter/lib/ui/login_page.dart
+import 'package:flutter/material.dart';
+import '../services/api.dart';
+
+class LoginPage extends StatefulWidget {
+  final LumeApi api;
+  final Future<void> Function() onAuthenticated;
+  final String? notice;
+  const LoginPage({super.key,required this.api,required this.onAuthenticated,this.notice});
+  @override State<LoginPage> createState()=>_LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage>{
+  final user=TextEditingController();
+  final pass=TextEditingController();
+  bool busy=false;
+  String? error;
+
+  @override void dispose(){user.dispose();pass.dispose();super.dispose();}
+
+  Future<void> submit() async{
+    if(busy)return;
+    setState((){busy=true;error=null;});
+    try{
+      await widget.api.login(user.text.trim(),pass.text);
+      pass.clear();
+      await widget.onAuthenticated();
+    }catch(_){
+      if(mounted)setState(()=>error='Não foi possível entrar. Verifique suas credenciais.');
+    }final

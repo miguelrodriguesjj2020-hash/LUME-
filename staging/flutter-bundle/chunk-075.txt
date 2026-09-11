@@ -1,0 +1,31 @@
+eRoute(builder:(_)=>MediaUpdatesPage(services:widget.services)))),
+                IconButton(tooltip:'Downloads',icon:const Icon(Icons.download_for_offline_outlined),onPressed:()=>Navigator.of(context).push(MaterialPageRoute(builder:(_)=>DownloadsPage(services:widget.services)))),
+                PopupMenuButton<String>(onSelected:(value){
+                  if(value=='network')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>NetworkPreferencesPage(services:widget.services)));
+                  if(value=='diagnostics')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>CatalogDiagnosticsPage(services:widget.services)));
+                },itemBuilder:(_)=>[
+                  const PopupMenuItem(value:'network',child:Text('Uso de dados')),
+                  if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'diagnostics',child:Text('Diagnóstico do catálogo')),
+                ])
+              ],
+              bottom: const TabBar(tabs: [Tab(text: 'Livros'), Tab(text: 'HQs'), Tab(text: 'Mangás')]),
+            ),
+            body: TabBarView(children: [
+              _Shelf(loader: repo.books, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
+              _Shelf(loader: repo.comics, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
+              _Shelf(loader: repo.manga, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
+            ]),
+          ),
+        ),
+      );
+}
+
+class _Shelf extends StatefulWidget {
+  final Future<List<Work>> Function() loader;
+  final ValueChanged<Edition> onOpen;
+  final Future<void> Function(Edition) onDownload;
+  const _Shelf({required this.loader, required this.onOpen, required this.onDownload});
+  @override State<_Shelf> createState() => _ShelfState();
+}
+
+class _ShelfState exte

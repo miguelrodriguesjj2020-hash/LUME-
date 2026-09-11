@@ -1,0 +1,64 @@
+0 && i < length) result.add(i);
+    }
+    for (var d = 1; d <= secondCount; d++) {
+      final i = current + (forward ? -d : d);
+      if (i >= 0 && i < length) result.add(i);
+    }
+    return result;
+  }
+}
+
+/// Best-effort prefetch. Failures never fail the reader; disk remains authoritative.
+class EpubPrefetcher {
+  final MediaCache cache;
+  final PrefetchWindow window;
+  EpubPrefetcher(this.cache, {this.window = const PrefetchWindow()});
+
+  Future<void> warm({
+    required String editionId,
+    required List<String> spine,
+    required int currentIndex,
+    int direction = 1,
+  }) async {
+    final indexes = window.around(currentIndex, spine.length, direction: direction);
+    await Future.wait(indexes.map((i) async {
+      try {
+        await cache.readText(editionId: editionId, file: File(spine[i]));
+      } catch (_) {
+        // Prefetch is optional and must never block reading.
+      }
+    }));
+  }
+}
+
+FILE 42 1458
+flutter/lib/services/reading_progress.dart
+import 'dart:math';
+import '../data/database.dart';
+import '../models/progress.dart';
+
+class ReadingProgressService {
+  final LumeDb db;
+  final String profileId;
+  final String deviceId;
+  ReadingProgressService(this.db, {required this.profileId, required this.deviceId});
+
+  Future<void> save(String editionId, ReadingLocator locator, {double? percent, bool completed = false}) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final p = _derivePercent(locator, explicit: percent, completed: completed);
+    final opId = '$deviceId:$editionId:$now:${Random().nextInt(1 << 31)}';
+    await db.upsertProgress({
+      'profileId': profileId,
+      'editionId': editionId,
+      'locator': locator.toJson(),
+      'percent': p,
+      'completed': completed || p >= 0.999,
+      'clientUpdatedAt': now,
+      'deviceId': deviceId,
+      'opId': opId,
+    }, enqueue: true);
+  }
+
+  Future<Map<String, dynamic>?> load(String editionId) => db.getProgress(profileId, editionId);
+
+  double _derivePercent(ReadingLo

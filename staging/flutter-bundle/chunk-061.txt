@@ -1,0 +1,43 @@
+inal asset=await db.getOfflineAsset(editionId);
+    if(asset==null || asset['state']!='ready')return const MediaRevalidationResult(checked:false,needsUpdate:false);
+    try{
+      final descriptor=MediaDescriptor.fromJson(await api.media(editionId));
+      final localTag=(asset['source_tag'] as String?)??'';
+      final remoteTag=descriptor.sourceTag;
+      // Empty/weak remote fingerprint is never enough to invalidate a verified local asset.
+      final changed=remoteTag.isNotEmpty && localTag.isNotEmpty && remoteTag!=localTag;
+      await db.recordMediaRevalidation(editionId,remoteSourceTag:remoteTag,needsUpdate:changed);
+      return MediaRevalidationResult(checked:true,needsUpdate:changed,remoteSourceTag:remoteTag);
+    }catch(e){
+      // Revalidation is advisory. Never demote READY media because the network failed.
+      await db.recordMediaRevalidation(editionId,needsUpdate:false,lastError:e.toString());
+      return const MediaRevalidationResult(checked:false,needsUpdate:false);
+    }
+  }
+}
+
+FILE 39 1235
+flutter/lib/services/media_updates.dart
+import 'dart:io';
+import '../data/database.dart';
+import 'api.dart';
+import 'media_descriptor.dart';
+import 'media_replacement.dart';
+import 'network_policy.dart';
+
+class MediaUpdateService {
+  final LumeDb db;
+  final LumeApi api;
+  final MediaReplacementCoordinator replacement;
+  final Directory mediaDirectory;
+  final NetworkPolicy? networkPolicy;
+  final Future<NetworkClass> Function()? networkClass;
+  MediaUpdateService({required this.db,required this.api,required this.replacement,required this.mediaDirectory,this.networkPolicy,this.networkClass});
+
+  Future<List<Map<String,dynamic>>> pending() => db.listPendingMediaUpdates();
+
+  /// Explicit opt-in update. Revalidation never consumes bandwidth by itself.
+  Future<void> update(String editionId) async {
+    if(networkPolicy!=null && networkClass!=null){
+      final decision=await networkPolicy!.decide(await networkClass!(),TransferIntent.mediaUpdate);
+      if(!dec

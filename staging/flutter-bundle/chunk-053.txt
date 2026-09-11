@@ -1,0 +1,50 @@
+(raw);
+    if (j['kind'] == 'page') {
+      return PageLocator((j['page'] as num?)?.toInt() ?? 1, pageCount: (j['pageCount'] as num?)?.toInt());
+    }
+    if (j['kind'] == 'epub') {
+      return EpubLocator(
+        '${j['href'] ?? ''}',
+        cfi: j['cfi'] as String?,
+        progression: (j['progression'] as num?)?.toDouble(),
+        bookProgression: (j['bookProgression'] as num?)?.toDouble(),
+        spineIndex: (j['spineIndex'] as num?)?.toInt(),
+        spineCount: (j['spineCount'] as num?)?.toInt(),
+      );
+    }
+    return null;
+  }
+
+  int _spineIndex(PreparedEpub p, ReadingLocator? locator) {
+    if (locator is! EpubLocator) return 0;
+    final stored=locator.spineIndex;
+    if(stored!=null && stored>=0 && stored<p.spine.length)return stored;
+    if(locator.href.isEmpty)return 0;
+    final needle = Uri.decodeComponent(locator.href.split('#').first);
+    final i = p.spine.indexWhere((x) => x.endsWith(needle));
+    return i < 0 ? 0 : i;
+  }
+}
+
+FILE 43 8164
+flutter/lib/services/media_replacement.dart
+import 'dart:io';
+import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
+import '../data/database.dart';
+import 'download.dart';
+import 'media_descriptor.dart';
+import 'storage_policy.dart';
+
+/// Downloads a successor into a shadow slot while the current READY asset
+/// remains readable. The database is switched only after verification.
+class MediaReplacementCoordinator {
+  final LumeDb db;
+  final http.Client client;
+  final StoragePressurePolicy? storagePolicy;
+  MediaReplacementCoordinator(this.db,{http.Client? client,this.storagePolicy}):client=client??http.Client();
+
+  Future<File> replace({required String editionId,required MediaDescriptor descriptor,required Directory directory,Map<String,String> headers=const {}}) async {
+    final current=await db.getOfflineAsset(editionId);
+    if(current==null || current['state']!='ready') throw StateError('replacement requires current READY asset');
+    final oldPath=current['local_path'] as S

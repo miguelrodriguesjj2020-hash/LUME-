@@ -1,0 +1,40 @@
+tag':r['sourceTag'],
+      'updated_at':r['updatedAt']??DateTime.now().millisecondsSinceEpoch,'last_error':r['lastError'],
+      'staged_path':r['stagedPath'],'backup_path':r['backupPath'],'phase':r['phase']??r['state']??'downloading',
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  Future<Map<String,dynamic>?> getMediaReplacement(String editionId) async {
+    final d=await db; final rows=await d.query('media_replacements',where:'edition_id=?',whereArgs:[editionId],limit:1);
+    return rows.isEmpty?null:Map<String,dynamic>.from(rows.first);
+  }
+
+  Future<void> deleteMediaReplacement(String editionId) async {
+    final d=await db; await d.delete('media_replacements',where:'edition_id=?',whereArgs:[editionId]);
+  }
+
+  Future<void> saveSyncRetry(String profileId,{required int attempt,required int? nextRetryAt,String? lastError}) async {
+    final d=await db;
+    await d.insert('sync_retry',{
+      'profile_id':profileId,'attempt':attempt,'next_retry_at':nextRetryAt,
+      'last_error':lastError,'updated_at':DateTime.now().millisecondsSinceEpoch,
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  Future<Map<String,dynamic>?> getSyncRetry(String profileId) async {
+    final d=await db; final rows=await d.query('sync_retry',where:'profile_id=?',whereArgs:[profileId],limit:1);
+    return rows.isEmpty?null:Map<String,dynamic>.from(rows.first);
+  }
+
+  Future<void> clearSyncRetry(String profileId) async {
+    final d=await db; await d.delete('sync_retry',where:'profile_id=?',whereArgs:[profileId]);
+  }
+
+  Future<List<Map<String,dynamic>>> listMediaReplacements() async {
+    final d=await db; final rows=await d.query('media_replacements',orderBy:'updated_at ASC');
+    return rows.map((r)=>Map<String,dynamic>.from(r)).toList();
+  }
+
+  Future<List<Map<String,dynamic>>> listPendingMediaUpdates() async {
+    final d=await db;
+    final rows=await d.rawQuery("SELECT r.edition_id,r.remote_source_tag,r.checked_at,r.last_error,e.json AS edition_json,m.state AS repla

@@ -1,0 +1,41 @@
+onId, OfflineState.paused, bytes, expectedBytes);
+      rethrow;
+    } on DownloadCancelled {
+      if (await part.exists()) await part.delete();
+      await db.deleteOfflineAsset(editionId);
+      rethrow;
+    } catch (e) {
+      final bytes = await part.exists() ? await part.length() : 0;
+      retryCount++;
+      await _persist(editionId, OfflineState.failed, target, part, expectedBytes, bytes, effectiveEtag, expectedSha256, sourceTag, pinned: pinned, retryCount: retryCount, lastError: e.toString());
+      onProgress?.call(editionId, OfflineState.failed, bytes, expectedBytes);
+      rethrow;
+    }
+  }
+
+  Future<void> remove(String editionId) async {
+    final asset = await db.getOfflineAsset(editionId);
+    if (asset == null) return;
+    await db.setOfflineAssetState(editionId, OfflineState.removing.name);
+    for (final key in ['local_path', 'temp_path']) {
+      final path = asset[key] as String?;
+      if (path != null && path.isNotEmpty) {
+        final f = File(path);
+        if (await f.exists()) await f.delete();
+      }
+    }
+    await db.deleteOfflineAsset(editionId);
+  }
+
+  Future<void> _verify(File file, {int? expectedBytes, String? expectedSha256}) async {
+    if (!await file.exists()) throw const DownloadException('partial file missing');
+    final length = await file.length();
+    if (expectedBytes != null && length != expectedBytes) throw DownloadException('size mismatch $length != $expectedBytes');
+    if (expectedSha256 != null && expectedSha256.isNotEmpty) {
+      final digest = await sha256.bind(file.openRead()).first;
+      if (digest.toString().toLowerCase() != expectedSha256.toLowerCase()) throw const DownloadException('sha256 mismatch');
+    }
+  }
+
+  Future<void> _persist(String editionId, OfflineState state, File target, File part, int? expectedBytes, int receivedBytes, String? etag, String? sha256Value, String? sourceTag, {required bool pinned, required int retryCount, String? lastError, int? lastAccessedAt}) {
+    return db.upsertOffline

@@ -1,0 +1,18 @@
+'dart:math';
+import 'package:http/http.dart' as http;
+import 'api.dart';
+
+class RetryPolicy {
+  final int maxAttempts;
+  final Duration baseDelay;
+  final Duration maxDelay;
+  final Random _random;
+  RetryPolicy({this.maxAttempts=5,this.baseDelay=const Duration(milliseconds:500),this.maxDelay=const Duration(seconds:20),Random? random}) : assert(maxAttempts>0), _random=random??Random();
+
+  bool isTransient(Object error)=>
+      error is TimeoutException ||
+      error is http.ClientException ||
+      (error is ApiException && (error.statusCode==408 || error.statusCode==425 || error.statusCode==429 || error.statusCode>=500));
+
+  Duration delayFor(int attempt,{Duration? retryAfter}) {
+    if

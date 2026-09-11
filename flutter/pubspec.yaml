@@ -1,0 +1,21 @@
+name: lume
+version: 0.35.0+35
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  crypto: ^3.0.3
+  archive: ^4.2.0
+  pdfx: ^2.11.0
+  webview_flutter: ^4.7.0
+  connectivity_plus: ^6.1.5
+
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

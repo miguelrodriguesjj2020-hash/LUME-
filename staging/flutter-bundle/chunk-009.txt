@@ -1,0 +1,31 @@
+l'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<int> reservedOfflineBytes() async {
+    final d=await db;
+    final rows=await d.rawQuery("SELECT (SELECT COALESCE(SUM(CASE WHEN COALESCE(expected_bytes,0)>received_bytes THEN expected_bytes-received_bytes ELSE 0 END),0) FROM offline_assets WHERE state IN ('queued','downloading','verifying','paused')) + (SELECT COALESCE(SUM(CASE WHEN COALESCE(expected_bytes,0)>received_bytes THEN expected_bytes-received_bytes ELSE 0 END),0) FROM media_replacements WHERE state IN ('downloading','verifying')) AS total");
+    return (rows.first['total'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> upsertDownloadJob({required String editionId, required String state, required Map<String,dynamic> request}) async {
+    final d=await db; final now=DateTime.now().millisecondsSinceEpoch;
+    final old=await d.query('download_jobs',columns:['created_at'],where:'edition_id=?',whereArgs:[editionId],limit:1);
+    await d.insert('download_jobs',{
+      'edition_id':editionId,'state':state,'request_json':jsonEncode(request),
+      'created_at':old.isEmpty?now:old.first['created_at'],'updated_at':now,
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  Future<void> setDownloadJobState(String editionId,String state) async {
+    final d=await db; await d.update('download_jobs',{'state':state,'updated_at':DateTime.now().millisecondsSinceEpoch},where:'edition_id=?',whereArgs:[editionId]);
+  }
+
+  Future<List<Map<String,dynamic>>> recoverableDownloadJobs() async {
+    final d=await db;
+    final rows=await d.query('download_jobs',where:"state IN ('queued','downloading','verifying','failed')",orderBy:'updated_at ASC');
+    return rows.map((r)=>{...Map<String,dynamic>.from(r),'request':jsonDecode(r['request_json'] as String)}).toList();
+  }
+
+  Future<List<Map<String,dynamic>>> listDownloadJobs() async {
+    final d=await db; final rows=await d.query('download_jobs',orderBy:'updated_at DESC');
+    return rows.map((r)=>{...Map<String,dynamic>.from(r),'request':j

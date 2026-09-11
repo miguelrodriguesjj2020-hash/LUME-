@@ -1,0 +1,51 @@
+  onPageFinished: _installForPage,
+      ))
+      ..addJavaScriptChannel('LumeProgress', onMessageReceived: (message) {
+        try {
+          final j = Map<String, dynamic>.from(jsonDecode(message.message));
+          final href='${j['href'] ?? widget.initial.href}';
+          final chapterProgress=((j['progression'] as num?)?.toDouble() ?? 0).clamp(0,1).toDouble();
+          final count=widget.spineEntries.isEmpty ? 1 : widget.spineEntries.length;
+          final index=_spineIndexForHref(href).clamp(0,count-1).toInt();
+          final whole=((index + chapterProgress)/count).clamp(0,1).toDouble();
+          widget.onProgress?.call(EpubLocator(
+            href,
+            cfi: normalizeEpubCfi(j['cfi']),
+            progression: chapterProgress,
+            bookProgression: whole,
+            spineIndex: index,
+            spineCount: count,
+          ));
+        } catch (_) {}
+      })
+      ..loadFile(widget.localEntry.toFilePath());
+  }
+
+  Future<void> _goSpine(int delta) async {
+    if(widget.spineEntries.isEmpty)return;
+    final next=(currentSpineIndex+delta).clamp(0,widget.spineEntries.length-1).toInt();
+    if(next==currentSpineIndex)return;
+    currentSpineIndex=next;
+    if(mounted)setState((){});
+    await controller.loadFile(widget.spineEntries[next]);
+  }
+
+  @override Widget build(BuildContext context) {
+    final total=widget.spineEntries.length;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(total>0 ? 'Leitor EPUB • ${currentSpineIndex+1}/$total' : 'Leitor EPUB'),
+        actions:[
+          IconButton(
+            tooltip:'Capítulo anterior',
+            onPressed:currentSpineIndex>0 ? ()=>_goSpine(-1) : null,
+            icon:const Icon(Icons.chevron_left),
+          ),
+          IconButton(
+            tooltip:'Próximo capítulo',
+            onPressed:total>0 && currentSpineIndex<total-1 ? ()=>_goSpine(1) : null,
+            icon:const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
+      body: WebViewWidget(cont

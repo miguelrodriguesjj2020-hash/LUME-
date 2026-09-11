@@ -1,0 +1,72 @@
+name: LUME Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  android-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Reconstruct and verify exact Flutter source
+        run: python tool/reconstruct_flutter_bundle.py
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter environment
+        working-directory: flutter
+        run: |
+          flutter --version
+          flutter doctor -v
+
+      - name: Generate Android scaffold
+        working-directory: flutter
+        run: flutter create --platforms=android --project-name=lume .
+
+      - name: Resolve dependencies
+        working-directory: flutter
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: flutter
+        run: flutter analyze --fatal-infos
+
+      - name: Flutter tests
+        working-directory: flutter
+        run: flutter test
+
+      - name: Build release APK
+        working-directory: flutter
+        env:
+          LUME_API_BASE: ${{ secrets.LUME_API_BASE }}
+        run: |
+          if [ -n "$LUME_API_BASE" ]; then
+            flutter build apk --release --dart-define=LUME_API_BASE="$LUME_API_BASE"
+          else
+            flutter build apk --release
+          fi
+          sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app/outputs/flutter-apk/app-release.apk.sha256
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lume-release-apk
+          path: |
+            flutter/build/app/outputs/flutter-apk/app-release.apk
+            flutter/build/app/outputs/flutter-apk/app-release.apk.sha256
+          if-no-files-found: error
+          retention-days: 14

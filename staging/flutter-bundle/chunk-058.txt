@@ -1,0 +1,14 @@
+'temp_path'] as String?)??'$targetPath.replacement.part');
+      final staged=File((row['staged_path'] as String?)??'$targetPath.replacement.ready');
+      final backup=File((row['backup_path'] as String?)??'$targetPath.previous');
+      referenced.addAll([part.path,staged.path,backup.path]);
+
+      final targetIsSuccessor=await _matches(target,row);
+      final stagedIsSuccessor=await _matches(staged,row);
+
+      if(targetIsSuccessor){
+        if(await backup.exists()) await backup.delete();
+        if(await staged.exists()) await staged.delete();
+        if(await part.exists()) await part.delete();
+        await db.upsertOfflineAsset({
+   

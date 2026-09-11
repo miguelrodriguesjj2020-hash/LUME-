@@ -1,0 +1,35 @@
+response,expectedBytes:descriptor.byteSize,expectedEtag:descriptor.etag);
+      final sink=part.openWrite(mode:received>0?FileMode.append:FileMode.write);
+      try {
+        await for(final chunk in response.stream){
+          if(descriptor.byteSize!=null && received+chunk.length>descriptor.byteSize!){
+            throw DownloadException('replacement exceeded expected size ${descriptor.byteSize}');
+          }
+          sink.add(chunk);received+=chunk.length;
+        }
+      } finally { await sink.close(); }
+      await db.upsertMediaReplacement({
+        'editionId':editionId,'state':'verifying','tempPath':part.path,
+        'expectedBytes':descriptor.byteSize,'receivedBytes':received,
+        'etag':descriptor.etag,'sha256':descriptor.sha256,'sourceTag':descriptor.sourceTag,
+        'stagedPath':staged.path,'backupPath':backup.path,'phase':'verifying',
+      });
+      if(descriptor.byteSize!=null && await part.length()!=descriptor.byteSize) throw const DownloadException('replacement size mismatch');
+      if(descriptor.sha256!=null && descriptor.sha256!.isNotEmpty){
+        final digest=await sha256.bind(part.openRead()).first;
+        if(digest.toString().toLowerCase()!=descriptor.sha256!.toLowerCase()) throw const DownloadException('replacement sha256 mismatch');
+      }
+      if(await staged.exists()) await staged.delete();
+      await part.rename(staged.path);
+      await db.upsertMediaReplacement({
+        'editionId':editionId,'state':'verifying','tempPath':part.path,
+        'expectedBytes':descriptor.byteSize,'receivedBytes':received,
+        'etag':descriptor.etag,'sha256':descriptor.sha256,'sourceTag':descriptor.sourceTag,
+        'stagedPath':staged.path,'backupPath':backup.path,'phase':'staged',
+      });
+
+      // Two-step swap with rollback. The old verified file remains available
+      // until the successor itself has been fully verified.
+      if(await backup.exists()) await backup.delete();
+      await db.upsertMediaReplacement({
+        'editio

@@ -1,0 +1,49 @@
+y,expectedBytes:resolved.expectedBytes,expectedSha256:resolved.expectedSha256,headers:resolved.headers,sourceTag:resolved.sourceTag,control:t.control,onProgress:onProgress);
+      }
+      terminal='ready';
+    } on DownloadPaused{terminal='paused';}
+      on DownloadCancelled{terminal='cancelled';}
+      on SessionExpiredException{terminal='queued';}
+      catch(_){terminal='failed';}
+    finally{_active.remove(t.editionId);if(onTerminal!=null)await onTerminal!(t.editionId,terminal);_pump();}
+  }
+}
+
+FILE 39 6168
+flutter/lib/services/epub_preparer.dart
+import 'dart:io';
+import 'dart:convert';
+import 'package:archive/archive_io.dart';
+import 'package:path/path.dart' as p;
+
+class PreparedEpub {
+  final Directory root;
+  final String packagePath;
+  final List<String> spine;
+  final bool fixedLayout;
+  PreparedEpub(this.root, this.packagePath, this.spine, this.fixedLayout);
+}
+
+class EpubPrepareException implements Exception {
+  final String message;
+  const EpubPrepareException(this.message);
+  @override String toString() => 'EpubPrepareException: $message';
+}
+
+class EpubPreparer {
+  final int maxEntries;
+  final int maxUncompressedBytes;
+  EpubPreparer({this.maxEntries = 10000, this.maxUncompressedBytes = 500 * 1024 * 1024});
+
+  Future<PreparedEpub> prepare({required File epub, required Directory destination}) async {
+    if (!await epub.exists()) throw const EpubPrepareException('EPUB missing');
+    final input = InputFileStream(epub.path);
+    final archive = ZipDecoder().decodeStream(input);
+    if (archive.length > maxEntries) throw const EpubPrepareException('too many entries');
+    var total = 0;
+    await destination.create(recursive: true);
+    final rootCanonical = p.normalize(p.absolute(destination.path));
+    for (final entry in archive) {
+      final name = entry.name.replaceAll('\\', '/');
+      if (name.startsWith('/') || name.split('/').contains('..') || Uri.tryParse(name)?.hasScheme == true) {
+        throw EpubPrepareException('unsafe archive path: $nam

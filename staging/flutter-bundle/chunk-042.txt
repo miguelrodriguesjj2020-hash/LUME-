@@ -1,0 +1,69 @@
+Asset({
+      'editionId': editionId,
+      'state': state.name,
+      'localPath': state == OfflineState.ready ? target.path : null,
+      'tempPath': state == OfflineState.ready ? null : part.path,
+      'expectedBytes': expectedBytes,
+      'receivedBytes': receivedBytes,
+      'etag': etag,
+      'sha256': sha256Value,
+      'sourceTag': sourceTag,
+      'pinned': pinned,
+      'retryCount': retryCount,
+      'lastError': lastError,
+      'lastAccessedAt': lastAccessedAt,
+      'updatedAt': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+}
+
+FILE 42 545
+flutter/lib/services/download_control.dart
+class DownloadCancelled implements Exception {
+  final String reason;
+  const DownloadCancelled([this.reason = 'cancelled']);
+}
+
+class DownloadPaused implements Exception {
+  const DownloadPaused();
+}
+
+class DownloadControl {
+  bool _cancelled = false;
+  bool _paused = false;
+  void cancel() { _cancelled = true; }
+  void pause() { _paused = true; }
+  bool get cancelled => _cancelled;
+  bool get paused => _paused;
+  void checkpoint() {
+    if (_cancelled) throw const DownloadCancelled();
+    if (_paused) throw const DownloadPaused();
+  }
+}
+
+FILE 40 3295
+flutter/lib/services/download_queue.dart
+import 'dart:async';
+import 'dart:io';
+import 'api.dart';
+import 'download.dart';
+import 'download_control.dart';
+
+typedef DownloadTerminalCallback = Future<void> Function(String editionId,String state);
+typedef DownloadProgressListener = void Function(String editionId, OfflineState state, int receivedBytes, int? expectedBytes);
+
+class ResolvedDownload {
+  final Uri uri;
+  final int? expectedBytes;
+  final String? expectedSha256;
+  final String? sourceTag;
+  final Map<String,String> headers;
+  const ResolvedDownload({required this.uri,this.expectedBytes,this.expectedSha256,this.sourceTag,this.headers=const{}});
+}
+
+typedef DownloadResolver = Future<ResolvedDownload> Function();
+
+class DownloadTask {
+  final String editionId;
+  final Directory directory;
+  final DownloadResolver res

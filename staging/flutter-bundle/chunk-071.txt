@@ -1,0 +1,43 @@
+ing.inMilliseconds}ms)';
+}
+
+enum SyncRunMode { manual, foreground, background }
+
+class SyncDeferred implements Exception {
+  final Duration remaining; final String reason;
+  const SyncDeferred(this.remaining,this.reason);
+  @override String toString()=>'SyncDeferred(${remaining.inMilliseconds}ms,$reason)';
+}
+
+class SyncCoordinator {
+  final LumeDb db;
+  final LumeApi api;
+  final RetryPolicy retryPolicy;
+  final PersistentSyncBackoff persistentBackoff;
+  SyncCoordinator(this.db, this.api,{RetryPolicy? retryPolicy,PersistentSyncBackoff? persistentBackoff})
+    :retryPolicy=retryPolicy??RetryPolicy(),persistentBackoff=persistentBackoff??PersistentSyncBackoff(db);
+
+  Future<bool> refreshCatalog() async {
+    final revision = await db.getRevision();
+    final manifest = await retryPolicy.run(()=>api.bootstrap(revision));
+    if (manifest == null) return false;
+    await db.applyCatalog(manifest);
+    return true;
+  }
+
+  Future<SyncResult> run(String profileId, {int maxRounds = 8, int batchSize = 50, SyncRunMode mode=SyncRunMode.manual}) async {
+    final now=DateTime.now().millisecondsSinceEpoch;
+    final schedule=await db.getSyncSchedule(profileId);
+    final deferred=(schedule?['deferred_until'] as num?)?.toInt();
+    if(mode!=SyncRunMode.manual && deferred!=null && deferred>now)throw SyncDeferred(Duration(milliseconds:deferred-now),'scheduled');
+    final remaining=await persistentBackoff.remaining(profileId);
+    if(remaining!=null && remaining>Duration.zero)throw SyncBackoffActive(remaining);
+    await db.saveSyncSchedule(profileId,mode:mode.name,lastAttemptAt:now,deferredUntil:null,lastError:null);
+    try {
+      final catalogChanged = await refreshCatalog();
+      var cursor = await db.getSyncCursor(profileId);
+      var sent = 0;
+      var received = 0;
+      for (var round = 0; round < maxRounds; round++) {
+        final ops = await db.loadOutbox(profileId,limit: batchSize);
+        final response = await retryPolicy.run(()=>api.sync(profileId, cursor, ops));

@@ -1,0 +1,44 @@
+    editionId: edition.id,
+        uri: descriptor.url,
+        directory: mediaDirectory,
+        expectedBytes: descriptor.byteSize ?? edition.byteSize,
+        expectedSha256: descriptor.sha256,
+        headers: descriptor.headers,
+        sourceTag: descriptor.sourceTag,
+      );
+    } on ExpiredMediaAuthorization {
+      // Reader-open path gets the same signed-URL recovery guarantee as the
+      // background queue. Resolve once more; DownloadManager will resume the
+      // verified .part only when Range/ETag still agree.
+      final fresh = MediaDescriptor.fromJson(await api.media(edition.id));
+      return downloads.download(
+        editionId: edition.id,
+        uri: fresh.url,
+        directory: mediaDirectory,
+        expectedBytes: fresh.byteSize ?? edition.byteSize,
+        expectedSha256: fresh.sha256,
+        headers: fresh.headers,
+        sourceTag: fresh.sourceTag,
+      );
+    }
+  }
+
+  Future<PreparedEpub> _ensurePreparedEpub(Edition edition, File epub, String sourceTag) async {
+    final root = Directory(p.join(preparedDirectory.path, edition.id));
+    final marker = File(p.join(root.path, '.lume-prepared.json'));
+    if (await marker.exists()) {
+      try {
+        final j = Map<String, dynamic>.from(jsonDecode(await marker.readAsString()));
+        if (j['sourceTag'] == sourceTag) {
+          final spine = List<String>.from(j['spine'] ?? const []);
+          final rootCanonical=p.normalize(p.absolute(root.path));
+          var valid=spine.isNotEmpty;
+          for(final entry in spine){
+            final candidate=p.normalize(p.absolute(entry));
+            if(!(candidate==rootCanonical || p.isWithin(rootCanonical,candidate)) || !await File(candidate).exists()){
+              valid=false; break;
+            }
+          }
+          final packagePath='${j['packagePath']}';
+          final packageCandidate=p.normalize(p.absolute(p.join(root.path,packagePath)));
+          if(!(packageCandidate==rootCanonical || p.isWithin(rootCanonical,packageCan

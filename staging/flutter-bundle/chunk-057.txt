@@ -1,0 +1,48 @@
+56':current['sha256'],'sourceTag':current['source_tag'],
+              'pinned':(current['pinned'] as num?)?.toInt()==1,
+              'retryCount':(current['retry_count'] as num?)?.toInt()??0,
+              'lastError':current['last_error'],'lastAccessedAt':current['last_accessed_at'],
+            });
+            await db.recordMediaRevalidation(editionId,remoteSourceTag:descriptor.sourceTag,needsUpdate:true,lastError:'replacement commit rolled back: $e');
+          }catch(_){/* recovery will prefer the restored READY bytes */}
+        }
+        rethrow;
+      }
+      if(await backup.exists()) await backup.delete();
+      return target;
+    } catch(e) {
+      await db.upsertMediaReplacement({
+        'editionId':editionId,'state':'failed','tempPath':part.path,
+        'expectedBytes':descriptor.byteSize,'receivedBytes':await part.exists()?await part.length():received,
+        'etag':descriptor.etag,'sha256':descriptor.sha256,'sourceTag':descriptor.sourceTag,'lastError':e.toString(),
+        'stagedPath':staged.path,'backupPath':backup.path,'phase':'failed',
+      });
+      // Deliberately do not mutate offline_assets: old READY copy survives.
+      rethrow;
+    }
+  }
+}
+
+FILE 52 6206
+flutter/lib/services/media_replacement_recovery.dart
+import 'dart:io';
+import 'package:crypto/crypto.dart';
+import '../data/database.dart';
+
+class ReplacementRecoveryReport {
+  final int finalized;
+  final int rolledBack;
+  final int preservedPartial;
+  final int cleanedOrphans;
+  const ReplacementRecoveryReport({this.finalized=0,this.rolledBack=0,this.preservedPartial=0,this.cleanedOrphans=0});
+}
+
+/// Recovers interrupted atomic media swaps conservatively.
+/// The last known verified READY copy always wins unless the successor can be
+/// re-verified from the persisted size/hash metadata.
+class MediaReplacementRecovery {
+  final LumeDb db;
+  MediaReplacementRecovery(this.db);
+
+  Future<bool> _matches(File file, Map<String,dynamic> row) async {
+    if(!await file.exists()) return false;

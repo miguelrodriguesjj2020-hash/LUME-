@@ -1,0 +1,38 @@
+tring?;
+    if(oldPath==null || oldPath.isEmpty || !await File(oldPath).exists()) throw StateError('current READY file missing');
+
+    await directory.create(recursive:true);
+    final target=File(oldPath);
+    final part=File('${target.path}.replacement.part');
+    final staged=File('${target.path}.replacement.ready');
+    final backup=File('${target.path}.previous');
+    var received=await part.exists()?await part.length():0;
+    if(descriptor.byteSize==null && (descriptor.sha256==null || descriptor.sha256!.isEmpty)){
+      throw StateError('replacement requires byteSize or sha256 integrity metadata');
+    }
+    final previousReplacement=await db.getMediaReplacement(editionId);
+    final previousSourceTag=previousReplacement?['source_tag'] as String?;
+    final previousEtag=previousReplacement?['etag'] as String?;
+    if(received>0 && ((previousSourceTag!=null && previousSourceTag!=descriptor.sourceTag) ||
+        (previousEtag!=null && descriptor.etag!=null && previousEtag!=descriptor.etag))){
+      await part.delete();
+      received=0;
+    }
+
+    try {
+      await db.upsertMediaReplacement({
+        'editionId':editionId,'state':'downloading','tempPath':part.path,
+        'expectedBytes':descriptor.byteSize,'receivedBytes':received,
+        'etag':descriptor.etag,'sha256':descriptor.sha256,'sourceTag':descriptor.sourceTag,
+        'stagedPath':staged.path,'backupPath':backup.path,'phase':'downloading',
+      });
+      if(descriptor.byteSize!=null && storagePolicy!=null)await storagePolicy!.ensureBudget();
+      final req=http.Request('GET',descriptor.url);
+      req.headers.addAll(headers);
+      if(received>0){
+        req.headers['Range']='bytes=$received-';
+        if(descriptor.etag!=null) req.headers['If-Range']=descriptor.etag!;
+      }
+      final response=await client.send(req);
+      if(response.statusCode==401 || response.statusCode==403) throw ExpiredMediaAuthorization(response.statusCode);
+      validateResponseContract(localBytes:received,response:

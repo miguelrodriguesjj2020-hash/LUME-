@@ -1,0 +1,36 @@
+nId':editionId,'state':'verifying','tempPath':part.path,
+        'expectedBytes':descriptor.byteSize,'receivedBytes':received,
+        'etag':descriptor.etag,'sha256':descriptor.sha256,'sourceTag':descriptor.sourceTag,
+        'stagedPath':staged.path,'backupPath':backup.path,'phase':'swapping',
+      });
+      await target.rename(backup.path);
+      try {
+        await staged.rename(target.path);
+      } catch(e) {
+        if(await backup.exists() && !await target.exists()) await backup.rename(target.path);
+        rethrow;
+      }
+      try{
+        await db.upsertOfflineAsset({
+          'editionId':editionId,'state':'ready','localPath':target.path,'tempPath':null,
+          'expectedBytes':descriptor.byteSize,'receivedBytes':await target.length(),
+          'etag':descriptor.etag,'sha256':descriptor.sha256,'sourceTag':descriptor.sourceTag,
+          'pinned':(current['pinned'] as num?)?.toInt()==1,
+          'retryCount':0,'lastError':null,'lastAccessedAt':DateTime.now().millisecondsSinceEpoch,
+        });
+        await db.recordMediaRevalidation(editionId,remoteSourceTag:descriptor.sourceTag,needsUpdate:false);
+        await db.deleteMediaReplacement(editionId);
+      }catch(e){
+        // Database commit failed after filesystem swap. Restore both the
+        // previous verified bytes and their metadata; never leave an old file
+        // described by the successor's hash/ETag.
+        if(await backup.exists()){
+          final failedSuccessor=File('${target.path}.failed-successor');
+          if(await failedSuccessor.exists())await failedSuccessor.delete();
+          if(await target.exists())await target.rename(failedSuccessor.path);
+          await backup.rename(target.path);
+          try{
+            await db.upsertOfflineAsset({
+              'editionId':editionId,'state':'ready','localPath':target.path,'tempPath':null,
+              'expectedBytes':current['expected_bytes'],'receivedBytes':await target.length(),
+              'etag':current['etag'],'sha2

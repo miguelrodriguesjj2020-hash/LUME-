@@ -1,0 +1,5 @@
+h('epubcfi(/')||!cfi.endsWith(')'))return null;
+  const raw=cfi.slice(9,-1).split('/').filter(Boolean);let n=document.documentElement;
+  for(const token of raw){const m=token.match(/^(\d+)(?:\[([^\]]*)\])?(?::(\d+))?$/);if(!m)return null;const k=Number(m[1]);
+    if(k%2===0){const els=[...n.children];n=els[k/2-1];if(!n)return null;if(m[2]&&n.id&&n.id!==unesc(m[2])){const byId=document.getElementById(unesc(m[2]));if(byId)n=byId;}}
+    else {const elementBefore=(k-1)/2;let seen=0,found=null;for(const child of n.childNodes){if(child.nodeType===1){seen++;continue;}if(child.nodeType===3&&seen===elementBefore){found

@@ -1,0 +1,32 @@
+uper.initState();future=widget.services.mediaUpdates.pending();}
+  void reload()=>setState(()=>future=widget.services.mediaUpdates.pending());
+  Future<void> update(String id) async {
+    setState(()=>busy.add(id));
+    try{
+      await widget.services.mediaUpdates.update(id);
+      if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Atualização concluída.')));
+    }catch(e){
+      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Não foi possível atualizar agora: $e')));
+    }finally{
+      if(mounted){setState(()=>busy.remove(id));reload();}
+    }
+  }
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('Atualizações disponíveis')),
+    body:FutureBuilder<List<Map<String,dynamic>>>(future:future,builder:(context,s){
+      if(s.hasError)return Center(child:Text('Erro ao verificar atualizações: ${s.error}'));
+      if(!s.hasData)return const Center(child:CircularProgressIndicator());
+      final rows=s.data!;
+      if(rows.isEmpty)return const Center(child:Text('Seus arquivos offline estão atualizados.'));
+      return ListView.builder(itemCount:rows.length,itemBuilder:(context,i){
+        final row=rows[i];final id=row['edition_id'] as String;final edition=(row['edition'] as Map?)?.cast<String,dynamic>();
+        final name=(edition?['fileName']??id).toString();
+        final working=busy.contains(id);
+        final received=(row['replacement_received_bytes'] as num?)?.toInt()??0;
+        final expected=(row['replacement_expected_bytes'] as num?)?.toInt();
+        final phase=row['replacement_phase']?.toString();
+        final resumable=(row['replacement_state']=='failed' || phase=='downloading') && received>0;
+        return ListTile(
+          leading:const Icon(Icons.system_update_alt),
+          title:Text(name),
+          subtitle:Text(resumable ? 'Atualização interrompida: ${(received/1024/1024).toStringAsFixed(1)} MB${expected!=null?' de ${(expected

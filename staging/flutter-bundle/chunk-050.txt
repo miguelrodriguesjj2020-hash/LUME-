@@ -1,0 +1,53 @@
+ition, descriptor, asset: asset, readyFile: null);
+      sourceTag = descriptor.sourceTag;
+    }
+
+    final progress = profileId == null ? null : await db.getProgress(profileId, edition.id);
+    final locator = _locatorFromProgress(progress);
+
+    final format=edition.format.toLowerCase();
+    if(format=='cbz'){
+      final preparedCbz=await _ensurePreparedCbz(edition,local,sourceTag);
+      await db.touchOfflineAsset(edition.id);
+      return OpenedMedia(localPath:local.path,cbz:preparedCbz,locator:locator);
+    }
+    if (format != 'epub') {
+      await db.touchOfflineAsset(edition.id);
+      return OpenedMedia(localPath: local.path, locator: locator);
+    }
+
+    final prepared = await _ensurePreparedEpub(edition, local, sourceTag);
+    final initialIndex = _spineIndex(prepared, locator);
+    // Warm adjacent chapters without blocking first paint.
+    EpubPrefetcher(cache).warm(
+      editionId: edition.id,
+      spine: prepared.spine,
+      currentIndex: initialIndex,
+    );
+    await db.touchOfflineAsset(edition.id);
+    return OpenedMedia(
+      localPath: local.path,
+      epub: prepared,
+      epubEntryPath: prepared.spine[initialIndex],
+      locator: locator,
+    );
+  }
+
+  Future<File?> _readyFile(Map<String, dynamic>? asset) async {
+    if (asset == null || asset['state'] != OfflineState.ready.name) return null;
+    final path = asset['local_path'] as String?;
+    if (path == null) return null;
+    final f = File(path);
+    return await f.exists() ? f : null;
+  }
+
+  Future<File> _ensureLocal(Edition edition, MediaDescriptor descriptor, {Map<String, dynamic>? asset, File? readyFile}) async {
+    if (asset != null && asset['state'] == OfflineState.ready.name) {
+      final tag = asset['source_tag'] as String?;
+      if (readyFile != null && tag == descriptor.sourceTag) return readyFile;
+      await db.setOfflineAssetState(edition.id, OfflineState.stale.name);
+      cache.hot.clearEdition(edition.id);
+    }
+    try {
+      return await downloads.download(
+    

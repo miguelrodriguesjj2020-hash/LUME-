@@ -1,0 +1,38 @@
+?.checkpoint();
+        final plan = planResume(localBytes, effectiveEtag);
+        final req = http.Request('GET', uri)..headers.addAll(headers)..headers.addAll(plan.headers);
+        final response = await client.send(req);
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          throw ExpiredMediaAuthorization(response.statusCode);
+        }
+        try{
+          validateResponseContract(localBytes:localBytes,response:response,expectedBytes:expectedBytes,expectedEtag:effectiveEtag);
+        }on DownloadException{
+          if(localBytes>0 && attempt==0){
+            if(await part.exists())await part.delete();
+            localBytes=0; effectiveEtag=null; retryCount++;
+            continue;
+          }
+          rethrow;
+        }
+        final responseEtag = response.headers['etag'];
+        effectiveEtag = responseEtag ?? effectiveEtag;
+        await _persist(editionId, OfflineState.downloading, target, part, expectedBytes, localBytes, effectiveEtag, expectedSha256, sourceTag, pinned: pinned, retryCount: retryCount);
+        onProgress?.call(editionId, OfflineState.downloading, localBytes, expectedBytes);
+        final sink = part.openWrite(mode: localBytes > 0 ? FileMode.append : FileMode.write);
+        try {
+          await for (final chunk in response.stream) {
+            control?.checkpoint();
+            if(expectedBytes!=null && localBytes+chunk.length>expectedBytes){
+              throw DownloadException('response exceeded expected size $expectedBytes');
+            }
+            sink.add(chunk);
+            localBytes += chunk.length;
+            onProgress?.call(editionId, OfflineState.downloading, localBytes, expectedBytes);
+          }
+        } finally {
+          await sink.close();
+        }
+        control?.checkpoint();
+        await _persist(editionId, OfflineState.verifying, target, part, expectedBytes, localBytes, effectiveEtag, expectedSha256, sourceTag, pinned: pinned, retryCount: retryCount);
+        onProgress?.

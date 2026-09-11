@@ -1,0 +1,39 @@
+sonDecode(r['request_json'] as String)}).toList();
+  }
+
+  Future<void> deleteDownloadJob(String editionId) async { final d=await db; await d.delete('download_jobs',where:'edition_id=?',whereArgs:[editionId]); }
+
+  Future<void> normalizeInterruptedDownloads() async {
+    final d=await db; final now=DateTime.now().millisecondsSinceEpoch;
+    await d.transaction((t) async {
+      await t.update('download_jobs',{'state':'queued','updated_at':now},where:"state IN ('downloading','verifying')");
+      await t.update('offline_assets',{'state':'queued','updated_at':now},where:"state IN ('downloading','verifying')");
+    });
+  }
+
+  Future<void> recordMediaRevalidation(String editionId,{String? remoteSourceTag,required bool needsUpdate,String? lastError}) async {
+    final d=await db;
+    await d.insert('media_revalidation',{
+      'edition_id':editionId,'remote_source_tag':remoteSourceTag,
+      'checked_at':DateTime.now().millisecondsSinceEpoch,
+      'needs_update':needsUpdate?1:0,'last_error':lastError,
+    },conflictAlgorithm:ConflictAlgorithm.replace);
+  }
+
+  Future<Map<String,dynamic>?> getMediaRevalidation(String editionId) async {
+    final d=await db; final rows=await d.query('media_revalidation',where:'edition_id=?',whereArgs:[editionId],limit:1);
+    return rows.isEmpty?null:Map<String,dynamic>.from(rows.first);
+  }
+
+  Future<List<Map<String,dynamic>>> recentlyAccessedReadyAssets({int limit=5}) async {
+    final d=await db;
+    final rows=await d.query('offline_assets',where:"state='ready'",orderBy:'COALESCE(last_accessed_at,updated_at) DESC',limit:limit);
+    return rows.map((r)=>Map<String,dynamic>.from(r)).toList();
+  }
+
+  Future<void> upsertMediaReplacement(Map<String,dynamic> r) async {
+    final d=await db;
+    await d.insert('media_replacements',{
+      'edition_id':r['editionId'],'state':r['state'],'temp_path':r['tempPath'],
+      'expected_bytes':r['expectedBytes'],'received_bytes':r['receivedBytes']??0,
+      'etag':r['etag'],'sha256':r['sha256'],'source_

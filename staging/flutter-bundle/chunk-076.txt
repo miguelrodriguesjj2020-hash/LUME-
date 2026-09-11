@@ -1,0 +1,45 @@
+nds State<_Shelf> {
+  late Future<List<Work>> future = widget.loader();
+  String? selectedSection;
+  Future<void> refresh() async { setState(() => future = widget.loader()); await future; }
+
+  List<String> _sections(List<Work> works){
+    final found=<String>{};
+    for(final w in works){found.addAll(w.sections);}
+    const priority=[
+      LibrarySection.classics,
+      LibrarySection.recommendations,
+      LibrarySection.bestWritten,
+      LibrarySection.essentials,
+      LibrarySection.recent,
+    ];
+    final result=<String>[];
+    for(final x in priority){if(found.remove(x))result.add(x);}
+    result.addAll(found.toList()..sort());
+    return result;
+  }
+
+  @override Widget build(BuildContext context) => RefreshIndicator(
+        onRefresh: refresh,
+        child: FutureBuilder<List<Work>>(
+          future: future,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) return ListView(children: [Padding(padding: const EdgeInsets.all(24), child: Text('Erro ao abrir catálogo: ${snapshot.error}'))]);
+            if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+            final works = snapshot.data!;
+            if (works.isEmpty) return ListView(children: const [Padding(padding: EdgeInsets.all(24), child: Text('Nenhuma obra sincronizada ainda.'))]);
+            final sections=_sections(works);
+            if(selectedSection!=null && !sections.contains(selectedSection)){
+              selectedSection=null;
+            }
+            final visible=selectedSection==null
+                ? works
+                : works.where((w)=>w.sections.contains(selectedSection)).toList(growable:false);
+            return CustomScrollView(
+              slivers:[
+                if(sections.isNotEmpty) SliverToBoxAdapter(
+                  child:SingleChildScrollView(
+                    scrollDirection:Axis.horizontal,
+                    padding:const EdgeInsets.fromLTRB(16,12,16,0),
+                    child:Row(children:[
+ 

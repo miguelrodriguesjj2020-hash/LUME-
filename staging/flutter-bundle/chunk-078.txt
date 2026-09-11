@@ -1,0 +1,39 @@
+al Future<void> Function(Edition) onDownload;
+  const _WorkCard({required this.work, required this.onOpen, required this.onDownload});
+  @override Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () async {
+            final edition = await showModalBottomSheet<Edition>(context: context, showDragHandle: true, builder: (_) => _EditionSheet(work: work,onDownload:onDownload));
+            if (edition != null && context.mounted) onOpen(edition);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: Center(child: Icon(_icon(work.type), size: 56))),
+              Text(work.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 6),
+              Text(
+                work.sections.isEmpty
+                  ? '${work.editions.length} ${work.editions.length == 1 ? 'edição' : 'edições'}'
+                  : '${work.editions.length} ${work.editions.length == 1 ? 'edição' : 'edições'} · ${work.sections.first}',
+                maxLines:2,
+                overflow:TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ]),
+          ),
+        ),
+      );
+
+  IconData _icon(String type) => switch (type) { 'manga' => Icons.menu_book, 'hq' => Icons.auto_stories, _ => Icons.book };
+}
+
+class _EditionSheet extends StatelessWidget {
+  final Work work;
+  final Future<void> Function(Edition) onDownload;
+  const _EditionSheet({required this.work,required this.onDownload});
+  @override Widget build(BuildContext context) {
+    final editions = [...work.editions]..sort((a,b) => (a.volume ?? a.chapter ?? 0).compareTo(b.volume ?? b.chapter ?? 0));
+    return SafeArea(child: ListView(shrinkWrap: true, children: [
+      ListTile(ti

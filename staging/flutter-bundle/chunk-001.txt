@@ -1,0 +1,63 @@
+on('$key must be a non-empty string array for $wid');
+      }
+    }
+    for(final er in (w['editions'] as List)){
+      final e=Map<String,dynamic>.from(er as Map);
+      final eid=e['id'] as String?;
+      if(eid==null || eid.trim().isEmpty) throw CatalogIntegrityException('edition id missing in $wid');
+      if(!editionIds.add(eid)) throw CatalogIntegrityException('duplicate edition id: $eid');
+      final fmt=e['format'] as String?;
+      if(!const {'pdf','epub','cbz','cbr'}.contains(fmt)) throw CatalogIntegrityException('invalid edition format for $eid: $fmt');
+      final sourceFileId=e['sourceFileId'] as String?;
+      final fileName=e['fileName'] as String?;
+      if(sourceFileId==null || sourceFileId.trim().isEmpty) throw CatalogIntegrityException('sourceFileId missing for $eid');
+      if(fileName==null || fileName.trim().isEmpty) throw CatalogIntegrityException('fileName missing for $eid');
+    }
+  }
+  for(final raw in (m['tombstones'] as List? ?? const [])){
+    final t=Map<String,dynamic>.from(raw as Map);
+    final id=t['id'] as String?; final kind=t['kind'] as String?;
+    if(id==null || id.isEmpty || !const {'work','edition'}.contains(kind)) throw const CatalogIntegrityException('invalid tombstone');
+    final key='$kind:$id';
+    if(!tombstones.add(key)) throw CatalogIntegrityException('duplicate tombstone: $key');
+    if(kind=='work' && workIds.contains(id)) throw CatalogIntegrityException('work both present and tombstoned: $id');
+    if(kind=='edition' && editionIds.contains(id)) throw CatalogIntegrityException('edition both present and tombstoned: $id');
+  }
+}
+
+class LumeDb {
+  Database? _db;
+
+  Future<Database> get db async => _db ??= await openDatabase(
+        join(await getDatabasesPath(), 'lume.db'),
+        version: 11,
+        onCreate: (d, v) async {
+          await _create(d);
+        },
+        onUpgrade: (d, oldVersion, newVersion) async {
+          if (oldVersion < 2) {
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_editions_work ON editions(work_id)');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_outbox_created ON outbox(created_at)');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_progress_updated ON progress(updated_at)');
+          }
+          if (oldVersion < 3) {
+            await d.execute('ALTER TABLE outbox ADD COLUMN scope_key TEXT');
+            await d.execute('ALTER TABLE offline_assets ADD COLUMN source_tag TEXT');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_outbox_scope ON outbox(kind,scope_key)');
+          }
+          if (oldVersion < 4) {
+            await d.execute('ALTER TABLE offline_assets ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0');
+            await d.execute('ALTER TABLE offline_assets ADD COLUMN last_accessed_at INTEGER');
+            await d.execute('ALTER TABLE offline_assets ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0');
+            await d.execute('ALTER TABLE offline_assets ADD COLUMN last_error TEXT');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_offline_lru ON offline_assets(state,pinned,last_accessed_at)');
+          }
+          if (oldVersion < 5) {
+            await d.execute('CREATE TABLE IF NOT EXISTS download_jobs(edition_id TEXT PRIMARY KEY,state TEXT NOT NULL,request_json TEXT NOT NULL,created_at INTEGER NOT NULL,updated_at INTEGER NOT NULL)');
+            await d.execute('CREATE INDEX IF NOT EXISTS idx_download_jobs_state ON download_jobs(state,updated_at)');
+          }
+          if (oldVersion < 6) {
+            await d.execute('CREATE TABLE IF NOT EXISTS media_revalidation(edition_id TEXT PRIMARY KEY,remote_source_tag TEXT,checked_at INTEGER NOT NULL,needs_update INTEGER NOT NULL DEFAULT 0,last_error TEXT)');
+          }
+          if (oldVersion < 7) {
+            await d.execute('CREATE TABLE IF NOT EXISTS media_replacements(edition_id TEXT PRIMARY KEY,state TEXT NOT NULL,temp_path TEXT NOT NULL,expected_bytes INTEGER,received_bytes INTEGER NOT NULL DEFAULT 0,etag TEXT,sh

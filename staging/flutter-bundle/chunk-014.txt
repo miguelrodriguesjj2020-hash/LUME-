@@ -1,0 +1,60 @@
+ctivitySub?.cancel();
+    connectivitySub=null;
+    lastNetwork=null;
+    services?.reconnect.dispose();
+    services?.offlineDownloads.dispose();
+    if(!mounted)return;
+    setState((){
+      services=null;
+      creating=false;
+      loginNotice=event.type==SessionEventType.expired
+          ? 'Sua sessão expirou. Entre novamente; sua leitura e downloads locais foram preservados.'
+          : null;
+    });
+    // Force the authentication boundary even when expiry happened from a
+    // reader/download route above the app home.
+    navigatorKey.currentState?.popUntil((route)=>route.isFirst);
+  }
+
+  @override
+  void dispose(){
+    WidgetsBinding.instance.removeObserver(this);
+    sessionSub?.cancel();
+    connectivitySub?.cancel();
+    services?.reconnect.dispose();
+    services?.offlineDownloads.dispose();
+    api.dispose();
+    super.dispose();
+  }
+
+  Future<void> authenticated() async {
+    if(creating)return;
+    setState((){creating=true;loginNotice=null;});
+    try{
+      final s=await AppServices.create(
+        apiBase:widget.apiBase,
+        existingApi:api,
+        profileId:api.session.profileId,
+      );
+      if(!mounted)return;
+      await connectivitySub?.cancel();
+      lastNetwork=await s.connectivity.current();
+      s.reconnect.seed(lastNetwork!);
+      connectivitySub=s.connectivity.changes.listen((network){
+        lastNetwork=network;
+        s.reconnect.onNetwork(network);
+      });
+      setState((){services=s;creating=false;});
+    }catch(_){
+      if(!mounted)return;
+      setState((){creating=false;loginNotice='Não foi possível inicializar a biblioteca local.';});
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state){
+    if(state==AppLifecycleState.resumed && services!=null){
+      services!.offlineDownloads.reconcile();
+      // SessionExpiredException is surfaced by LumeApi through sessionEvents;
+      // local state remains in SQLite if the network/session is unavailable.
+      services!.sync.run(service

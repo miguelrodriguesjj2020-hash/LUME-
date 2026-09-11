@@ -1,0 +1,55 @@
+__)=>const Divider(height:1),
+        itemBuilder:(context,i){final x=issues[i];final severe=x.severity=='error';return ListTile(
+          leading:Icon(severe?Icons.error_outline:Icons.warning_amber_outlined),
+          title:Text(x.message),
+          subtitle:Text('${x.code}\n${const JsonEncoder.withIndent('  ').convert(x.context)}'),
+          isThreeLine:true,
+        );},
+      );
+    }),
+  );
+}
+
+FILE 32 11152
+flutter/lib/ui/catalog_page.dart
+import 'package:flutter/material.dart';
+import '../models/catalog.dart';
+import '../readers/reader_session_page.dart';
+import '../services/app_services.dart';
+import '../services/library_repository.dart';
+import 'downloads_page.dart';
+import 'media_updates_page.dart';
+import 'network_preferences_page.dart';
+import 'catalog_diagnostics_page.dart';
+
+class CatalogPage extends StatefulWidget {
+  final AppServices services;
+  const CatalogPage({super.key, required this.services});
+  @override State<CatalogPage> createState() => _CatalogPageState();
+}
+
+class _CatalogPageState extends State<CatalogPage> {
+  late final LibraryRepository repo = LibraryRepository(widget.services.db);
+  late Future<void> initialRefresh;
+
+  @override
+  void initState() {
+    super.initState();
+    initialRefresh = widget.services.sync.refreshCatalog().then((_) {}).catchError((_) {});
+  }
+
+  Future<void> _openEdition(BuildContext context, Edition edition) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ReaderSessionPage(edition: edition, services: widget.services),
+    ));
+  }
+
+  @override Widget build(BuildContext context) => FutureBuilder<void>(
+        future: initialRefresh,
+        builder: (context, _) => DefaultTabController(
+          length: 3,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('LUME'),
+              actions:[
+                IconButton(tooltip:'Atualizações',icon:const Icon(Icons.system_update_alt),onPressed:()=>Navigator.of(context).push(MaterialPag

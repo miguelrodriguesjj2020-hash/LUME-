@@ -1,0 +1,42 @@
+profileId,opId],limit:1);
+        if(rows.isNotEmpty){
+          await _quarantineOutboxRowTx(t,Map<String,Object?>.from(rows.first),'server rejected: ${r['reason'] ?? 'invalid operation'}');
+        }
+      }
+      var lastSeq=prev;
+      for(final raw in events){
+        if(raw is! Map)throw const FormatException('sync event must be an object');
+        final e=Map<String,dynamic>.from(raw);
+        final seq=e['seq'];
+        if(seq is! int || seq<=lastSeq || seq>next)throw FormatException('invalid sync event sequence: $seq');
+        if(e['profile']!=profileId)throw const FormatException('sync event profile mismatch');
+        if(e['payload'] is! Map || e['edition'] is! String || (e['edition'] as String).isEmpty)throw const FormatException('invalid sync event payload');
+        final p=Map<String,dynamic>.from(e['payload'] as Map);
+        p['profileId']=profileId;
+        p['editionId']=e['edition'];
+        await _upsertProgressTx(t,p);
+        lastSeq=seq;
+      }
+      if(events.isEmpty && next!=prev)throw const FormatException('cursor advanced without events');
+      if(events.isNotEmpty && lastSeq!=next)throw const FormatException('cursor does not match final event');
+      await t.insert('meta',{'k':'sync_cursor:$profileId','v':'$next'},conflictAlgorithm:ConflictAlgorithm.replace);
+    });
+  }
+
+  Future<Map<String, dynamic>?> getOfflineAsset(String editionId) async {
+    final d = await db;
+    final rows = await d.query('offline_assets', where: 'edition_id=?', whereArgs: [editionId], limit: 1);
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
+  }
+
+  Future<void> setOfflineAssetState(String editionId, String state) async {
+    final d = await db;
+    await d.update('offline_assets', {
+      'state': state,
+      'updated_at': DateTime.now().millisecondsSinceEpoch,
+    }, where: 'edition_id=?', whereArgs: [editionId]);
+  }
+
+  Future<void> upsertOfflineAsset(Map<String, dynamic> a) async {
+    final d = await db;
+    await d.insert('o
