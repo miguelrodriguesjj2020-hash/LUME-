@@ -41,6 +41,32 @@ jobs:
       - name: Harden generated Android scaffold
         run: python tool/harden_android_scaffold.py
 
+      - name: Prepare optional production signing
+        env:
+          LUME_ANDROID_KEYSTORE_B64: ${{ secrets.LUME_ANDROID_KEYSTORE_B64 }}
+          LUME_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.LUME_ANDROID_KEYSTORE_PASSWORD }}
+          LUME_ANDROID_KEY_ALIAS: ${{ secrets.LUME_ANDROID_KEY_ALIAS }}
+          LUME_ANDROID_KEY_PASSWORD: ${{ secrets.LUME_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p flutter/build/qa
+          if [ -n "${LUME_ANDROID_KEYSTORE_B64:-}" ]; then
+            test -n "${LUME_ANDROID_KEYSTORE_PASSWORD:-}"
+            test -n "${LUME_ANDROID_KEY_ALIAS:-}"
+            test -n "${LUME_ANDROID_KEY_PASSWORD:-}"
+            printf '%s' "$LUME_ANDROID_KEYSTORE_B64" | base64 --decode > flutter/android/app/lume-release.jks
+            chmod 600 flutter/android/app/lume-release.jks
+            cat > flutter/android/key.properties <<EOF
+          storePassword=$LUME_ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$LUME_ANDROID_KEY_PASSWORD
+          keyAlias=$LUME_ANDROID_KEY_ALIAS
+          storeFile=lume-release.jks
+          EOF
+            echo 'SIGNING_INPUT=production-secret-material-present' > flutter/build/qa/signing-input.txt
+          else
+            echo 'SIGNING_INPUT=qa-debug-fallback' > flutter/build/qa/signing-input.txt
+          fi
+
       - name: Apply audited build fixes
         run: |
           set -euo pipefail
@@ -56,6 +82,7 @@ jobs:
           fi
           grep -q '^version: 0.35.3+38$' flutter/pubspec.yaml
           command -v zip >/dev/null
+          command -v python3 >/dev/null
           cp tool/build_tests/*.dart flutter/test/
 
       - name: Resolve dependencies
@@ -81,9 +108,13 @@ jobs:
           LUME_API_BASE: ${{ secrets.LUME_API_BASE }}
         run: |
           set -euo pipefail
-          if [ -n "$LUME_API_BASE" ]; then
+          if [ -n "${LUME_API_BASE:-}" ]; then
+            case "$LUME_API_BASE" in
+              https://*) ;;
+              *) echo 'LUME_API_BASE must use HTTPS for an Android release candidate' >&2; exit 64;;
+            esac
             flutter build apk --release --dart-define=LUME_API_BASE="$LUME_API_BASE"
-            echo 'API_BASE_STATUS=configured' > build/qa/api-base-status.txt
+            echo 'API_BASE_STATUS=configured-https' > build/qa/api-base-status.txt
           else
             flutter build apk --release
             echo 'API_BASE_STATUS=placeholder-lume.invalid' > build/qa/api-base-status.txt
@@ -102,11 +133,21 @@ jobs:
           test -x "$APKSIGNER"
           "$AAPT" dump badging "$APK" | tee "$QA/aapt-badging.txt"
           "$AAPT" dump permissions "$APK" | tee "$QA/aapt-permissions.txt"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee "$QA/aapt-manifest-tree.txt"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$QA/apksigner.txt"
           grep -q "package: name='br.com.lume.bibliotecaestudantil'" "$QA/aapt-badging.txt"
+          grep -q "versionCode='38'" "$QA/aapt-badging.txt"
+          grep -q "versionName='0.35.3'" "$QA/aapt-badging.txt"
           grep -q "application-label:'LUME'" "$QA/aapt-badging.txt"
           grep -q "uses-permission: name='android.permission.INTERNET'" "$QA/aapt-permissions.txt"
+          if grep -q '^application-debuggable' "$QA/aapt-badging.txt"; then
+            echo 'Release APK is unexpectedly debuggable' >&2
+            exit 65
+          fi
           unzip -t "$APK" > "$QA/apk-zip-integrity.txt"
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            unzip -l "$APK" "lib/$ABI/libapp.so" | grep -q "lib/$ABI/libapp.so"
+          done
           unzip -p "$APK" lib/arm64-v8a/libapp.so > "$QA/libapp-arm64.so"
           if strings "$QA/libapp-arm64.so" | grep -q 'https://lume.invalid'; then
             echo 'EMBEDDED_API_STATUS=placeholder-lume.invalid' | tee "$QA/embedded-api-status.txt"
@@ -118,6 +159,11 @@ jobs:
             echo 'SIGNING_STATUS=qa-debug-certificate' | tee "$QA/signing-status.txt"
           else
             echo 'SIGNING_STATUS=non-debug-certificate' | tee "$QA/signing-status.txt"
+          fi
+          if grep -q '^SIGNING_STATUS=non-debug-certificate$' "$QA/signing-status.txt" && grep -q '^EMBEDDED_API_STATUS=non-placeholder$' "$QA/embedded-api-status.txt"; then
+            echo 'APK_CLASSIFICATION=production-signing-and-api-config-present' | tee "$QA/apk-classification.txt"
+          else
+            echo 'APK_CLASSIFICATION=qa-only-not-for-distribution' | tee "$QA/apk-classification.txt"
           fi
 
       - name: Upload QA APK and audit evidence
