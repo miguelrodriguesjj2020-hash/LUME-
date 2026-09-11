@@ -1,0 +1,93 @@
+--- a/flutter/lib/main.dart
++++ b/flutter/lib/main.dart
+@@ -103,9 +103,13 @@
+       services!.offlineDownloads.reconcile();
+       // SessionExpiredException is surfaced by LumeApi through sessionEvents;
+       // local state remains in SQLite if the network/session is unavailable.
+-      services!.sync.run(services!.profileId,mode:SyncRunMode.foreground).catchError((_){return null;});
++      unawaited(() async {
++        try { await services!.sync.run(services!.profileId,mode:SyncRunMode.foreground); } catch (_) {}
++      }());
+       // Advisory stale-while-revalidate: never blocks local reading or demotes READY assets.
+-      services!.revalidateRecentMedia().catchError((_){return null;});
++      unawaited(() async {
++        try { await services!.revalidateRecentMedia(); } catch (_) {}
++      }());
+     }
+   }
+ 
+--- a/flutter/lib/services/cbz_preparer.dart
++++ b/flutter/lib/services/cbz_preparer.dart
+@@ -51,7 +51,6 @@
+         final outPath=p.normalize(p.absolute(p.join(destination.path,name)));
+         if(!(outPath==root || p.isWithin(root,outPath)))throw CbzPrepareException('path escapes destination: $name');
+         final data=entry.content;
+-        if(data is! List<int>)throw CbzPrepareException('unsupported compressed entry: $name');
+         final out=File(outPath);
+         await out.parent.create(recursive:true);
+         await out.writeAsBytes(data,flush:false);
+--- a/flutter/lib/services/epub_preparer.dart
++++ b/flutter/lib/services/epub_preparer.dart
+@@ -44,7 +44,7 @@
+       if (entry.isFile) {
+         final out = File(outPath)..createSync(recursive: true);
+         final data = entry.content;
+-        if (data is List<int>) out.writeAsBytesSync(data, flush: false);
++        out.writeAsBytesSync(data, flush: false);
+       } else {
+         Directory(outPath).createSync(recursive: true);
+       }
+@@ -55,18 +55,18 @@
+     final container = File(p.join(destination.path, 'META-INF', 'container.xml'));
+     if (!await container.exists()) throw const EpubPrepareException('container.xml missing');
+     final cxml = await container.readAsString();
+-    final rootfile = RegExp(r'full-path\s*=\s*["\']([^"\']+)["\']').firstMatch(cxml)?.group(1);
++    final rootfile = RegExp(r'''full-path\s*=\s*["']([^"']+)["']''').firstMatch(cxml)?.group(1);
+     if (rootfile == null || rootfile.isEmpty) throw const EpubPrepareException('rootfile missing');
+     final opfFile = File(p.join(destination.path, rootfile));
+     if (!await opfFile.exists()) throw const EpubPrepareException('OPF missing');
+     final opf = await opfFile.readAsString();
+     final manifest = <String, String>{};
+-    for (final m in RegExp(r'<item\b[^>]*\bid=["\']([^"\']+)["\'][^>]*\bhref=["\']([^"\']+)["\'][^>]*/?>', caseSensitive: false).allMatches(opf)) {
++    for (final m in RegExp(r'''<item\b[^>]*\bid=["']([^"']+)["'][^>]*\bhref=["']([^"']+)["'][^>]*/?>''', caseSensitive: false).allMatches(opf)) {
+       manifest[m.group(1)!] = m.group(2)!;
+     }
+     final opfDir = p.dirname(rootfile);
+     final spine = <String>[];
+-    for (final m in RegExp(r'<itemref\b[^>]*\bidref=["\']([^"\']+)["\'][^>]*/?>', caseSensitive: false).allMatches(opf)) {
++    for (final m in RegExp(r'''<itemref\b[^>]*\bidref=["']([^"']+)["'][^>]*/?>''', caseSensitive: false).allMatches(opf)) {
+       final href = manifest[m.group(1)!];
+       if (href == null) continue;
+       final decoded = Uri.decodeComponent(href.split('#').first);
+--- a/flutter/lib/services/storage_policy.dart
++++ b/flutter/lib/services/storage_policy.dart
+@@ -17,7 +17,8 @@
+     final ready=await db.readyOfflineBytes();
+     final reserved=await db.reservedOfflineBytes();
+     final need=ready+reserved-maxDiskCacheBytes;
+-    return need>0?freeAtLeast(need):const StoragePolicyResult(0,[]);
++    if(need>0)return await freeAtLeast(need);
++    return const StoragePolicyResult(0,[]);
+   }
+ 
+   Future<StoragePolicyResult> freeAtLeast(int bytesNeeded) async {
+--- a/flutter/lib/ui/catalog_page.dart
++++ b/flutter/lib/ui/catalog_page.dart
+@@ -210,7 +210,7 @@
+           subtitle: Text(unsupportedCbr
+               ? 'CBR · indisponível até validação RAR segura'
+               : '${e.format.toUpperCase()} · ${e.language}'),
+-          trailing: Wrap(mainAxisSize:MainAxisSize.min,children:[
++          trailing: Row(mainAxisSize:MainAxisSize.min,children:[
+             IconButton(
+               tooltip:unsupportedCbr ? 'CBR ainda não suportado' : 'Baixar para leitura offline',
+               icon:Icon(unsupportedCbr ? Icons.block : Icons.download_outlined),
+--- a/flutter/pubspec.yaml
++++ b/flutter/pubspec.yaml
+@@ -1,5 +1,5 @@
+ name: lume
+-version: 0.35.0+35
++version: 0.35.1+36
+ environment:
+   sdk: '>=3.3.0 <4.0.0'
+ dependencies:

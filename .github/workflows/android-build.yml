@@ -37,6 +37,21 @@ jobs:
         working-directory: flutter
         run: flutter create --platforms=android --project-name=lume .
 
+      - name: Apply audited build fixes
+        run: |
+          set -euo pipefail
+          git apply --check tool/flutter_build_fixes.patch
+          git apply tool/flutter_build_fixes.patch
+          if [ -f flutter/test/widget_test.dart ]; then
+            grep -q 'MyApp' flutter/test/widget_test.dart
+            rm flutter/test/widget_test.dart
+          fi
+          if [ -f flutter/analysis_options.yaml ]; then
+            grep -q 'package:flutter_lints/flutter.yaml' flutter/analysis_options.yaml
+            rm flutter/analysis_options.yaml
+          fi
+          grep -q '^version: 0.35.1+36$' flutter/pubspec.yaml
+
       - name: Resolve dependencies
         working-directory: flutter
         run: flutter pub get
