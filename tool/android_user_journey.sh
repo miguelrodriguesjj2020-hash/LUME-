@@ -35,6 +35,19 @@ for n in root.iter('node'):
 raise SystemExit(1)
 PY
 }
+coords_for_field(){
+  python3 - "$1" "$QA/ui-current.xml" <<'PY'
+import re,sys,xml.etree.ElementTree as ET
+kind=sys.argv[1]; want_password='true' if kind=='password' else 'false'
+root=ET.parse(sys.argv[2]).getroot()
+for n in root.iter('node'):
+    if n.attrib.get('class')=='android.widget.EditText' and n.attrib.get('password')==want_password:
+        m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.attrib.get('bounds',''))
+        if m:
+            x1,y1,x2,y2=map(int,m.groups()); print((x1+x2)//2,(y1+y2)//2); raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
 wait_text(){
   local text="$1"; local tries="${2:-80}"
   for _ in $(seq 1 "$tries"); do dump_ui; if coords_for "$text" >/dev/null 2>&1; then return 0; fi; sleep .25; done
@@ -42,6 +55,11 @@ wait_text(){
 }
 tap_text(){
   local text="$1"; wait_text "$text"; local xy; xy="$(coords_for "$text")"; adb shell input tap $xy; sleep .4;
+}
+tap_field(){
+  local kind="$1"; local tries="${2:-40}"; local xy=''
+  for _ in $(seq 1 "$tries"); do dump_ui; if xy="$(coords_for_field "$kind" 2>/dev/null)"; then adb shell input tap $xy; sleep .4; return 0; fi; sleep .25; done
+  echo "Timed out waiting for $kind EditText" >&2; cp "$QA/ui-current.xml" "$QA/ui-timeout.xml"; return 1
 }
 snapshot(){ dump_ui; cp "$QA/ui-current.xml" "$QA/ui-$1.xml"; adb exec-out screencap -p > "$QA/$1.png"; }
 
@@ -53,9 +71,10 @@ adb shell am force-stop "$PKG"
 adb shell am start -W -n "$ACTIVITY" | tee "$QA/launch-online.txt"
 grep -q 'Status: ok' "$QA/launch-online.txt"
 wait_text 'Entrar'
+snapshot 'login-screen'
 
-tap_text 'Usuário'; adb shell input text 'aluno'; sleep .2
-tap_text 'Senha'; adb shell input text 'lume2026'; sleep .2
+tap_field username; adb shell input text 'aluno'; sleep .2
+tap_field password; adb shell input text 'lume2026'; sleep .2
 tap_text 'Entrar'
 wait_text 'Livros' 120
 wait_text 'Clássico da Jornada' 120
