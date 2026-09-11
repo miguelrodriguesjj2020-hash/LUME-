@@ -1,0 +1,57 @@
+sticIssue('error','source_file_reused','A source file is referenced by multiple editions',{'sourceFileId':entry.key,'editionIds':ids}));
+      }
+    }
+    for(final wid in titleOwners.values.expand((x)=>x).toSet()){
+      if((editionCount[wid]??0)==0) issues.add(CatalogDiagnosticIssue('warning','work_without_editions','Work has no catalogued editions',{'workId':wid}));
+    }
+    return issues;
+  }
+
+  String toJsonReport(List<CatalogDiagnosticIssue> issues)=>const JsonEncoder.withIndent('  ').convert({
+    'generatedAt':DateTime.now().toUtc().toIso8601String(),
+    'issueCount':issues.length,
+    'issues':issues.map((x)=>x.toJson()).toList(),
+  });
+
+  String toCsvReport(List<CatalogDiagnosticIssue> issues){
+    String q(Object? v){final s=v?.toString()??'';return '"${s.replaceAll('"','""')}"';}
+    final out=<String>['severity,code,message,context'];
+    for(final x in issues){out.add([q(x.severity),q(x.code),q(x.message),q(jsonEncode(x.context))].join(','));}
+    return out.join('\n');
+  }
+
+  static String _norm(String s)=>s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+',unicode:true),' ').trim().replaceAll(RegExp(r'\s+'),' ');
+}
+
+FILE 38 3360
+flutter/lib/services/cbz_preparer.dart
+import 'dart:convert';
+import 'dart:io';
+import 'package:archive/archive_io.dart';
+import 'package:path/path.dart' as p;
+
+class PreparedCbz {
+  final Directory root;
+  final List<String> pages;
+  const PreparedCbz(this.root,this.pages);
+}
+
+class CbzPrepareException implements Exception {
+  final String message;
+  const CbzPrepareException(this.message);
+  @override String toString()=>'CbzPrepareException: $message';
+}
+
+class CbzPreparer {
+  final int maxEntries;
+  final int maxUncompressedBytes;
+  final int maxPageBytes;
+  CbzPreparer({
+    this.maxEntries=5000,
+    this.maxUncompressedBytes=1500*1024*1024,
+    this.maxPageBytes=100*1024*1024,
+  });
+
+  static const imageExt={'.jpg','.jpeg','.png','.webp','.gif'};
+
+  Future<PreparedCbz> prepare({required File cbz,required Directory destinat

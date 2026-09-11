@@ -1,0 +1,52 @@
+
+    final media = Directory('${app.path}/media');
+    final prepared = Directory('${app.path}/prepared');
+    await media.create(recursive: true);
+    await prepared.create(recursive: true);
+    final api = existingApi ?? LumeApi(apiBase, session: session);
+    final resolvedProfileId = profileId ?? api.session.profileId ?? 'local-profile';
+    final cache = MediaCache();
+    final storagePolicy = StoragePressurePolicy(db);
+    final downloader = DownloadManager(db, storagePolicy: storagePolicy);
+    final opener = MediaOpenCoordinator(
+      db: db,
+      api: api,
+      downloads: downloader,
+      epubPreparer: EpubPreparer(),
+      cbzPreparer: CbzPreparer(),
+      cache: cache,
+      mediaDirectory: media,
+      preparedDirectory: prepared,
+    );
+    final sync = SyncCoordinator(db, api);
+    final replacement=MediaReplacementCoordinator(db,storagePolicy:storagePolicy);
+    final recovery=MediaReplacementRecovery(db);
+    await recovery.recoverAll(media);
+    final networkPolicy=NetworkPolicy(db);
+    final connectivity=ConnectivityAdapter();
+    final reconnect=ReconnectCoordinator(api:api,sync:sync,profileId:resolvedProfileId);
+    final mediaUpdates=MediaUpdateService(db:db,api:api,replacement:replacement,mediaDirectory:media,networkPolicy:networkPolicy,networkClass:connectivity.current);
+    final offlineDownloads=RecoverableDownloadCoordinator(db:db,api:api,manager:downloader,mediaDirectory:media);
+    await offlineDownloads.initialize();
+    return AppServices._(
+      db: db,
+      api: api,
+      mediaCache: cache,
+      mediaOpen: opener,
+      mediaRevalidator: MediaRevalidator(db,api),
+      mediaReplacement: replacement,
+      mediaUpdates: mediaUpdates,
+      sync: sync,
+      offlineDownloads: offlineDownloads,
+      networkPolicy: networkPolicy,
+      connectivity: connectivity,
+      catalogDiagnostics: CatalogDiagnostics(db),
+      reconnect: reconnect,
+      profileId: resolvedProfileId,
+      deviceId: deviceId,
+    );
+  }
+}
+
+FILE 45 3102
+f

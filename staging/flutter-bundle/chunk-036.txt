@@ -1,0 +1,52 @@
+st DownloadException(this.message);
+  @override String toString() => 'DownloadException: $message';
+}
+
+class ExpiredMediaAuthorization extends DownloadException {
+  final int statusCode;
+  const ExpiredMediaAuthorization(this.statusCode):super('media authorization expired ($statusCode)');
+}
+
+enum OfflineState { notDownloaded, queued, downloading, verifying, ready, paused, failed, stale, removing }
+
+class DownloadPlan {
+  final bool append;
+  final Map<String, String> headers;
+  const DownloadPlan(this.append, this.headers);
+}
+
+DownloadPlan planResume(int bytes, String? etag) {
+  if (bytes <= 0) return const DownloadPlan(false, {});
+  return DownloadPlan(true, {'Range': 'bytes=$bytes-', if (etag != null && etag.isNotEmpty) 'If-Range': etag});
+}
+
+bool validResume(int local, http.StreamedResponse r) {
+  if (local == 0) return r.statusCode == 200 || r.statusCode == 206;
+  if (r.statusCode != 206) return false;
+  final cr = r.headers['content-range'];
+  if (cr == null) return false;
+  final m = RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(cr);
+  return m != null && int.parse(m.group(1)!) == local;
+}
+
+class ResumeResponseContract {
+  final int start;
+  final int end;
+  final int? total;
+  const ResumeResponseContract(this.start,this.end,this.total);
+}
+
+ResumeResponseContract? parseContentRange(String? value){
+  if(value==null)return null;
+  final m=RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(value.trim());
+  if(m==null)return null;
+  final start=int.parse(m.group(1)!); final end=int.parse(m.group(2)!);
+  if(end<start)return null;
+  final total=m.group(3)=='*'?null:int.parse(m.group(3)!);
+  if(total!=null && (total<=end || total<=0))return null;
+  return ResumeResponseContract(start,end,total);
+}
+
+void validateResponseContract({required int localBytes,required http.StreamedResponse response,int? expectedBytes,String? expectedEtag}){
+  if(localBytes==0){
+    if(response.statusCode!=200 && response.statusCode!=206)throw DownloadException('unexpected HTTP status 

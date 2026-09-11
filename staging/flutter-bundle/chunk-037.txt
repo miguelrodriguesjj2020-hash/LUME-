@@ -1,0 +1,43 @@
+${response.statusCode}');
+    if(response.statusCode==206){
+      final cr=parseContentRange(response.headers['content-range']);
+      if(cr==null || cr.start!=0)throw const DownloadException('invalid initial Content-Range');
+      if(expectedBytes!=null && cr.total!=expectedBytes)throw DownloadException('Content-Range total mismatch ${cr.total} != $expectedBytes');
+    }
+  }else{
+    if(response.statusCode!=206)throw DownloadException('resume expected 206, got ${response.statusCode}');
+    final cr=parseContentRange(response.headers['content-range']);
+    if(cr==null || cr.start!=localBytes)throw const DownloadException('resume Content-Range mismatch');
+    if(expectedBytes!=null && cr.total!=expectedBytes)throw DownloadException('Content-Range total mismatch ${cr.total} != $expectedBytes');
+  }
+  final responseEtag=response.headers['etag'];
+  if(expectedEtag!=null && expectedEtag.isNotEmpty && responseEtag!=null && responseEtag!=expectedEtag){
+    throw DownloadException('etag mismatch $responseEtag != $expectedEtag');
+  }
+  final contentLength=int.tryParse(response.headers['content-length']??'');
+  if(contentLength!=null && expectedBytes!=null){
+    final wanted=expectedBytes-localBytes;
+    if(contentLength!=wanted)throw DownloadException('content-length mismatch $contentLength != $wanted');
+  }
+}
+
+typedef DownloadProgressCallback = void Function(String editionId, OfflineState state, int receivedBytes, int? expectedBytes);
+
+class DownloadManager {
+  final LumeDb db;
+  final http.Client client;
+  final StoragePressurePolicy? storagePolicy;
+  DownloadManager(this.db, {http.Client? client, this.storagePolicy}) : client = client ?? http.Client();
+
+  Future<File> download({
+    required String editionId,
+    required Uri uri,
+    required Directory directory,
+    int? expectedBytes,
+    String? expectedSha256,
+    Map<String, String> headers = const {},
+    String? sourceTag,
+    DownloadControl? control,
+    DownloadProgressCallback? onProgress,
+  }) async {
+    awa

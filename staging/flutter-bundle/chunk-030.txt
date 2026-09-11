@@ -1,0 +1,68 @@
+olicy.dart';
+import 'connectivity_adapter.dart';
+import 'catalog_diagnostics.dart';
+import 'reconnect_coordinator.dart';
+import 'storage_policy.dart';
+import 'sync.dart';
+
+class AppServices {
+  final LumeDb db;
+  final LumeApi api;
+  final MediaCache mediaCache;
+  final MediaOpenCoordinator mediaOpen;
+  final MediaRevalidator mediaRevalidator;
+  final MediaReplacementCoordinator mediaReplacement;
+  final MediaUpdateService mediaUpdates;
+  final SyncCoordinator sync;
+  final RecoverableDownloadCoordinator offlineDownloads;
+  final NetworkPolicy networkPolicy;
+  final ConnectivityAdapter connectivity;
+  final CatalogDiagnostics catalogDiagnostics;
+  final ReconnectCoordinator reconnect;
+  final String profileId;
+  final String deviceId;
+
+  AppServices._({
+    required this.db,
+    required this.api,
+    required this.mediaCache,
+    required this.mediaOpen,
+    required this.mediaRevalidator,
+    required this.mediaReplacement,
+    required this.mediaUpdates,
+    required this.sync,
+    required this.offlineDownloads,
+    required this.networkPolicy,
+    required this.connectivity,
+    required this.catalogDiagnostics,
+    required this.reconnect,
+    required this.profileId,
+    required this.deviceId,
+  });
+
+
+  Future<void> revalidateRecentMedia({int limit=5}) async {
+    final assets=await db.recentlyAccessedReadyAssets(limit:limit);
+    for(final asset in assets){
+      final id=asset['edition_id'] as String?;
+      if(id==null || id.isEmpty)continue;
+      await mediaRevalidator.check(id);
+    }
+  }
+
+  ReadingProgressService progress() => ReadingProgressService(
+        db,
+        profileId: profileId,
+        deviceId: deviceId,
+      );
+
+  static Future<AppServices> create({
+    required Uri apiBase,
+    String? profileId,
+    LumeApi? existingApi,
+    LumeSession? session,
+  }) async {
+    final db = LumeDb();
+    final deviceId = await db.getOrCreateDeviceId();
+    await db.repairLegacyOutboxProfiles();
+    final app = await getApplicationSupportDirectory();

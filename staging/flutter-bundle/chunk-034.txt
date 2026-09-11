@@ -1,0 +1,43 @@
+ion}) async {
+    if(!await cbz.exists())throw const CbzPrepareException('CBZ missing');
+    final input=InputFileStream(cbz.path);
+    try{
+      final archive=ZipDecoder().decodeStream(input);
+      if(archive.length>maxEntries)throw const CbzPrepareException('too many entries');
+      var total=0;
+      final pages=<String>[];
+      await destination.create(recursive:true);
+      final root=p.normalize(p.absolute(destination.path));
+      for(final entry in archive){
+        final name=entry.name.replaceAll('\\','/');
+        if(name.startsWith('/') || name.split('/').contains('..') || Uri.tryParse(name)?.hasScheme==true){
+          throw CbzPrepareException('unsafe archive path: $name');
+        }
+        if(!entry.isFile)continue;
+        total+=entry.size;
+        if(total>maxUncompressedBytes)throw const CbzPrepareException('archive too large');
+        final ext=p.extension(name).toLowerCase();
+        if(!imageExt.contains(ext))continue;
+        if(entry.size>maxPageBytes)throw CbzPrepareException('page too large: $name');
+        final outPath=p.normalize(p.absolute(p.join(destination.path,name)));
+        if(!(outPath==root || p.isWithin(root,outPath)))throw CbzPrepareException('path escapes destination: $name');
+        final data=entry.content;
+        if(data is! List<int>)throw CbzPrepareException('unsupported compressed entry: $name');
+        final out=File(outPath);
+        await out.parent.create(recursive:true);
+        await out.writeAsBytes(data,flush:false);
+        pages.add(out.path);
+      }
+      if(pages.isEmpty)throw const CbzPrepareException('CBZ has no supported image pages');
+      pages.sort(_naturalCompare);
+      return PreparedCbz(destination,List.unmodifiable(pages));
+    } finally {
+      input.close();
+    }
+  }
+
+  static int _naturalCompare(String a,String b){
+    final aa=p.basename(a).toLowerCase();
+    final bb=p.basename(b).toLowerCase();
+    final rx=RegExp(r'(\d+|\D+)');
+    final ap=rx.allMatches(aa).map((m)=>m.group(0)

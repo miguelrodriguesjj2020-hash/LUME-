@@ -1,0 +1,57 @@
+.add(SessionEvent(SessionEventType.cleared,profileId:profile));
+  }
+
+  Future<bool> health() async {
+    try {
+      final r=await client.get(_u('/v1/health')).timeout(const Duration(seconds:5));
+      if(r.statusCode!=200)return false;
+      final j=jsonDecode(r.body);
+      return j is Map && j['ok']==true && j['service']=='lume';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Map<String,dynamic>?> bootstrap(int revision) async {
+    final r=await _guarded('bootstrap',()=>client.get(_u('/v1/bootstrap',{'since':'$revision'}),headers:_headers()));
+    if(r.statusCode==304)return null;
+    if(r.statusCode!=200)throw _apiError('bootstrap',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<Map<String,dynamic>> media(String id) async {
+    final r=await _guarded('media',()=>client.get(_u('/v1/media/$id'),headers:_headers()));
+    if(r.statusCode!=200)throw _apiError('media',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<Map<String,dynamic>> sync(String profile,String cursor,List<Map<String,dynamic>> ops) async {
+    final r=await _guarded('sync',()=>client.post(_u('/v1/profiles/$profile/sync'),headers:_headers({'content-type':'application/json'}),body:jsonEncode({'cursor':cursor,'ops':ops})));
+    if(r.statusCode!=200)throw _apiError('sync',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
+  void dispose(){
+    client.close();
+    _sessionEvents.close();
+  }
+}
+
+FILE 38 4474
+flutter/lib/services/app_services.dart
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import '../data/database.dart';
+import 'api.dart';
+import 'download.dart';
+import 'epub_preparer.dart';
+import 'cbz_preparer.dart';
+import 'media_cache.dart';
+import 'media_open_coordinator.dart';
+import 'media_revalidator.dart';
+import 'media_replacement.dart';
+import 'media_replacement_recovery.dart';
+import 'media_updates.dart';
+import 'reading_progress.dart';
+import 'recoverable_downloads.dart';
+import 'network_p

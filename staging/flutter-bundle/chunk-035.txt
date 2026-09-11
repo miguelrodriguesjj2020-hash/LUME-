@@ -1,0 +1,55 @@
+!).toList();
+    final bp=rx.allMatches(bb).map((m)=>m.group(0)!).toList();
+    for(var i=0;i<ap.length && i<bp.length;i++){
+      final an=int.tryParse(ap[i]), bn=int.tryParse(bp[i]);
+      final c=(an!=null && bn!=null) ? an.compareTo(bn) : ap[i].compareTo(bp[i]);
+      if(c!=0)return c;
+    }
+    return ap.length.compareTo(bp.length);
+  }
+
+  Future<void> writeMarker(PreparedCbz prepared,File marker,String sourceTag) async {
+    await marker.writeAsString(jsonEncode({
+      'sourceTag':sourceTag,
+      'pages':prepared.pages,
+    }),flush:true);
+  }
+}
+
+FILE 46 1062
+flutter/lib/services/connectivity_adapter.dart
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'network_policy.dart';
+
+/// Thin platform adapter. It reports transport availability only; callers must
+/// still handle real HTTP failures/timeouts because Wi-Fi != Internet access.
+class ConnectivityAdapter {
+  final Connectivity connectivity;
+  ConnectivityAdapter({Connectivity? connectivity}) : connectivity=connectivity ?? Connectivity();
+
+  Future<NetworkClass> current() async => _map(await connectivity.checkConnectivity());
+
+  Stream<NetworkClass> get changes => connectivity.onConnectivityChanged.map(_map).distinct();
+
+  static NetworkClass _map(List<ConnectivityResult> results){
+    if(results.isEmpty || results.every((x)=>x==ConnectivityResult.none)) return NetworkClass.offline;
+    if(results.contains(ConnectivityResult.ethernet)) return NetworkClass.ethernet;
+    if(results.contains(ConnectivityResult.wifi)) return NetworkClass.wifi;
+    if(results.contains(ConnectivityResult.mobile)) return NetworkClass.cellular;
+    return NetworkClass.other;
+  }
+}
+
+FILE 34 12820
+flutter/lib/services/download.dart
+import 'dart:io';
+import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
+import '../data/database.dart';
+import 'download_control.dart';
+import 'storage_policy.dart';
+
+class DownloadException implements Exception {
+  final String message;
+  con
