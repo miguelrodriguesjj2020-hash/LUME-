@@ -1,6 +1,60 @@
---- a/flutter/lib/main.dart
-+++ b/flutter/lib/main.dart
-@@ -103,9 +103,13 @@
+diff --git a/lib/main.dart b/lib/main.dart
+index 026fc5d..810468c 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -22,13 +22,14 @@ class LumeBootstrap extends StatefulWidget {
+ 
+ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserver {
+   final navigatorKey=GlobalKey<NavigatorState>();
+-  final SessionVault sessionVault=MemorySessionVault();
++  late final SessionVault sessionVault=SecureSessionVault(FlutterSecureSessionStore());
+   late final LumeApi api=LumeApi(widget.apiBase);
+   StreamSubscription<SessionEvent>? sessionSub;
+   StreamSubscription<NetworkClass>? connectivitySub;
+   NetworkClass? lastNetwork;
+   AppServices? services;
+   bool creating=false;
++  bool restoringSession=true;
+   String? loginNotice;
+ 
+   @override
+@@ -36,14 +37,33 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
+     super.initState();
+     WidgetsBinding.instance.addObserver(this);
+     sessionSub=api.sessionEvents.listen(_onSessionEvent);
++    unawaited(_restoreSession());
++  }
++
++  Future<void> _restoreSession() async {
++    try{
++      final restored=await sessionVault.load();
++      if(restored!=null && restored.authenticated){
++        api.session
++          ..token=restored.token
++          ..profileId=restored.profileId
++          ..role=restored.role
++          ..expiresAt=restored.expiresAt;
++        await authenticated();
++      }
++    }catch(_){
++      try{await sessionVault.clear();}catch(_){}
++    }finally{
++      if(mounted)setState(()=>restoringSession=false);
++    }
+   }
+ 
+   Future<void> _onSessionEvent(SessionEvent event) async {
+     if(event.type==SessionEventType.authenticated){
+-      await sessionVault.save(api.session);
++      try{await sessionVault.save(api.session);}catch(_){}
+       return;
+     }
+-    await sessionVault.clear();
++    try{await sessionVault.clear();}catch(_){}
+     await connectivitySub?.cancel();
+     connectivitySub=null;
+     lastNetwork=null;
+@@ -103,9 +123,13 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
        services!.offlineDownloads.reconcile();
        // SessionExpiredException is surfaced by LumeApi through sessionEvents;
        // local state remains in SQLite if the network/session is unavailable.
@@ -16,9 +70,25 @@
      }
    }
  
---- a/flutter/lib/services/cbz_preparer.dart
-+++ b/flutter/lib/services/cbz_preparer.dart
-@@ -51,7 +51,6 @@
+@@ -115,8 +139,10 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
+     debugShowCheckedModeBanner:false,
+     title:'LUME',
+     theme:ThemeData(useMaterial3:true),
+-    home:services==null
+-      ? LoginPage(api:api,onAuthenticated:authenticated,notice:loginNotice)
+-      : CatalogPage(services:services!),
++    home:restoringSession
++      ? const Scaffold(body:Center(child:CircularProgressIndicator()))
++      : services==null
++        ? LoginPage(api:api,onAuthenticated:authenticated,notice:loginNotice)
++        : CatalogPage(services:services!),
+   );
+ }
+diff --git a/lib/services/cbz_preparer.dart b/lib/services/cbz_preparer.dart
+index 7dbaf42..e35307d 100644
+--- a/lib/services/cbz_preparer.dart
++++ b/lib/services/cbz_preparer.dart
+@@ -51,7 +51,6 @@ class CbzPreparer {
          final outPath=p.normalize(p.absolute(p.join(destination.path,name)));
          if(!(outPath==root || p.isWithin(root,outPath)))throw CbzPrepareException('path escapes destination: $name');
          final data=entry.content;
@@ -26,15 +96,17 @@
          final out=File(outPath);
          await out.parent.create(recursive:true);
          await out.writeAsBytes(data,flush:false);
---- a/flutter/lib/services/epub_preparer.dart
-+++ b/flutter/lib/services/epub_preparer.dart
+diff --git a/lib/services/epub_preparer.dart b/lib/services/epub_preparer.dart
+index b0e968f..4cf1569 100644
+--- a/lib/services/epub_preparer.dart
++++ b/lib/services/epub_preparer.dart
 @@ -1,5 +1,4 @@
  import 'dart:io';
 -import 'dart:convert';
  import 'package:archive/archive_io.dart';
  import 'package:path/path.dart' as p;
  
-@@ -44,7 +43,7 @@
+@@ -44,7 +43,7 @@ class EpubPreparer {
        if (entry.isFile) {
          final out = File(outPath)..createSync(recursive: true);
          final data = entry.content;
@@ -43,7 +115,7 @@
        } else {
          Directory(outPath).createSync(recursive: true);
        }
-@@ -55,18 +54,18 @@
+@@ -55,18 +54,18 @@ class EpubPreparer {
      final container = File(p.join(destination.path, 'META-INF', 'container.xml'));
      if (!await container.exists()) throw const EpubPrepareException('container.xml missing');
      final cxml = await container.readAsString();
@@ -65,7 +137,7 @@
        final href = manifest[m.group(1)!];
        if (href == null) continue;
        final decoded = Uri.decodeComponent(href.split('#').first);
-@@ -101,6 +100,7 @@
+@@ -106,6 +105,7 @@ class EpubPreparer {
              .replaceAll(RegExp(r'''<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>''', caseSensitive: false), '')
              .replaceAll(RegExp(r'\s+on[a-z]+\s*=\s*\"[^\"]*\"', caseSensitive: false), '')
              .replaceAll(RegExp(r"\s+on[a-z]+\s*=\s*'[^']*'", caseSensitive: false), '')
@@ -73,9 +145,140 @@
              .replaceAllMapped(RegExp(r'''url\(\s*(["']?)(?:https?|file|content|javascript):[^\)]*\)''', caseSensitive: false), (_) => 'url(about:blank)')
              .replaceAll(RegExp(r'javascript\s*:', caseSensitive: false), 'about:blank:')
              .replaceAllMapped(RegExp(r'''((?:xlink:)?href|src)\s*=\s*(["'])(?:https?|file|content|javascript):[^"']*\2''', caseSensitive: false), (m) => '${m.group(1)}=${m.group(2)}about:blank${m.group(2)}')
---- a/flutter/lib/services/storage_policy.dart
-+++ b/flutter/lib/services/storage_policy.dart
-@@ -17,7 +17,8 @@
+diff --git a/lib/services/session_vault.dart b/lib/services/session_vault.dart
+index ef9d181..9fa47a9 100644
+--- a/lib/services/session_vault.dart
++++ b/lib/services/session_vault.dart
+@@ -1,16 +1,119 @@
++import 'dart:convert';
++import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+ import 'api.dart';
+ 
+ /// Storage boundary for authenticated session state.
+-///
+-/// The default implementation is intentionally memory-only. A platform-secure
+-/// implementation (Android Keystore / flutter_secure_storage) can be bound
+-/// after plugin APIs are compiled and validated on Android.
+ abstract interface class SessionVault {
+   Future<LumeSession?> load();
+   Future<void> save(LumeSession session);
+   Future<void> clear();
+ }
+ 
++/// Minimal string secret-store boundary so vault behavior can be unit tested
++/// without invoking a platform MethodChannel.
++abstract interface class SessionSecretStore {
++  Future<String?> read(String key);
++  Future<void> write(String key,String value);
++  Future<void> delete(String key);
++}
++
++class FlutterSecureSessionStore implements SessionSecretStore {
++  final FlutterSecureStorage storage;
++
++  FlutterSecureSessionStore({FlutterSecureStorage? storage})
++      : storage=storage??const FlutterSecureStorage(
++          aOptions:AndroidOptions(
++            storageNamespace:'lume_auth_v1',
++            resetOnError:true,
++            migrateOnAlgorithmChange:true,
++          ),
++        );
++
++  @override
++  Future<String?> read(String key)=>storage.read(key:key);
++
++  @override
++  Future<void> write(String key,String value)=>storage.write(key:key,value:value);
++
++  @override
++  Future<void> delete(String key)=>storage.delete(key:key);
++}
++
++class SecureSessionVault implements SessionVault {
++  static const _key='session_v1';
++  static const _schema=1;
++  final SessionSecretStore secrets;
++  Future<void> _tail=Future<void>.value();
++
++  SecureSessionVault(this.secrets);
++
++  Future<void> _enqueue(Future<void> Function() operation){
++    final next=_tail.then((_)=>operation());
++    _tail=next.catchError((_){ });
++    return next;
++  }
++
++  @override
++  Future<LumeSession?> load() async {
++    await _tail;
++    try{
++      final raw=await secrets.read(_key);
++      if(raw==null || raw.isEmpty)return null;
++      final decoded=jsonDecode(raw);
++      if(decoded is! Map)throw const FormatException('session is not an object');
++      final j=Map<String,dynamic>.from(decoded);
++      if(j['schema']!=_schema)throw const FormatException('unsupported session schema');
++      final token=j['token'];
++      final profileId=j['profileId'];
++      final role=j['role'];
++      final expiresAt=j['expiresAt'];
++      if(token is! String || token.isEmpty ||
++          profileId is! String || profileId.isEmpty ||
++          role is! String || role.isEmpty ||
++          expiresAt is! int){
++        throw const FormatException('invalid session fields');
++      }
++      final session=LumeSession()
++        ..token=token
++        ..profileId=profileId
++        ..role=role
++        ..expiresAt=expiresAt;
++      if(!session.authenticated){
++        await clear();
++        return null;
++      }
++      return session;
++    }catch(_){
++      try{await clear();}catch(_){}
++      return null;
++    }
++  }
++
++  @override
++  Future<void> save(LumeSession session) {
++    final token=session.token;
++    final profileId=session.profileId;
++    final role=session.role;
++    final expiresAt=session.expiresAt;
++    final authenticated=session.authenticated;
++    return _enqueue(() async {
++      if(!authenticated || token==null || profileId==null || role==null || expiresAt==null){
++        await secrets.delete(_key);
++        return;
++      }
++      await secrets.write(_key,jsonEncode({
++        'schema':_schema,
++        'token':token,
++        'profileId':profileId,
++        'role':role,
++        'expiresAt':expiresAt,
++      }));
++    });
++  }
++
++  @override
++  Future<void> clear()=>_enqueue(()=>secrets.delete(_key));
++}
++
+ class MemorySessionVault implements SessionVault {
+   LumeSession? _session;
+ 
+diff --git a/lib/services/storage_policy.dart b/lib/services/storage_policy.dart
+index 1125483..09d8587 100644
+--- a/lib/services/storage_policy.dart
++++ b/lib/services/storage_policy.dart
+@@ -17,7 +17,8 @@ class StoragePressurePolicy {
      final ready=await db.readyOfflineBytes();
      final reserved=await db.reservedOfflineBytes();
      final need=ready+reserved-maxDiskCacheBytes;
@@ -85,9 +288,11 @@
    }
  
    Future<StoragePolicyResult> freeAtLeast(int bytesNeeded) async {
---- a/flutter/lib/ui/catalog_page.dart
-+++ b/flutter/lib/ui/catalog_page.dart
-@@ -210,7 +210,7 @@
+diff --git a/lib/ui/catalog_page.dart b/lib/ui/catalog_page.dart
+index 0d092f5..19b822e 100644
+--- a/lib/ui/catalog_page.dart
++++ b/lib/ui/catalog_page.dart
+@@ -210,7 +210,7 @@ class _EditionSheet extends StatelessWidget {
            subtitle: Text(unsupportedCbr
                ? 'CBR · indisponível até validação RAR segura'
                : '${e.format.toUpperCase()} · ${e.language}'),
@@ -96,12 +301,24 @@
              IconButton(
                tooltip:unsupportedCbr ? 'CBR ainda não suportado' : 'Baixar para leitura offline',
                icon:Icon(unsupportedCbr ? Icons.block : Icons.download_outlined),
---- a/flutter/pubspec.yaml
-+++ b/flutter/pubspec.yaml
-@@ -1,5 +1,5 @@
+diff --git a/pubspec.yaml b/pubspec.yaml
+index a3ecddc..889d742 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -1,7 +1,7 @@
  name: lume
 -version: 0.35.0+35
 +version: 0.35.3+38
  environment:
-   sdk: '>=3.3.0 <4.0.0'
+-  sdk: '>=3.3.0 <4.0.0'
++  sdk: '>=3.8.0 <4.0.0'
  dependencies:
+   flutter:
+     sdk: flutter
+@@ -13,6 +13,7 @@ dependencies:
+   pdfx: ^2.11.0
+   webview_flutter: ^4.7.0
+   connectivity_plus: ^6.1.5
++  flutter_secure_storage: ^11.1.0
+ 
+   path_provider: ^2.1.5
