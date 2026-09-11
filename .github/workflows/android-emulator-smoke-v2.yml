@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
       - name: Download exact APK artifact from successful build
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -61,59 +63,7 @@ jobs:
           disable-linux-hw-accel: false
           emulator-boot-timeout: 900
           emulator-options: -no-snapshot-save -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
-          script: |
-            set -eu
-            PKG=br.com.lume.bibliotecaestudantil
-            ACTIVITY="$PKG/.MainActivity"
-            APK="$(find artifact -type f -name app-release.apk -print -quit)"
-            mkdir -p artifact/emulator-qa
-            adb wait-for-device
-            adb shell getprop ro.product.manufacturer | tr -d '\r' > artifact/emulator-qa/manufacturer.txt
-            adb shell getprop ro.product.model | tr -d '\r' > artifact/emulator-qa/model.txt
-            adb shell getprop ro.build.version.release | tr -d '\r' > artifact/emulator-qa/android-version.txt
-            adb shell getprop ro.build.version.sdk | tr -d '\r' > artifact/emulator-qa/api-level.txt
-            adb install "$APK" | tee artifact/emulator-qa/install.txt
-            adb shell pm path "$PKG" | tee artifact/emulator-qa/package-path.txt
-            adb shell dumpsys package "$PKG" > artifact/emulator-qa/package-dump.txt
-            grep -q 'versionCode=38' artifact/emulator-qa/package-dump.txt
-            grep -q 'versionName=0.35.3' artifact/emulator-qa/package-dump.txt
-
-            adb logcat -c
-            adb shell am force-stop "$PKG"
-            adb shell am start -W -n "$ACTIVITY" | tee artifact/emulator-qa/launch-1.txt
-            grep -q 'Status: ok' artifact/emulator-qa/launch-1.txt
-            sleep 8
-            PID1="$(adb shell pidof "$PKG" | tr -d '\r')"
-            test -n "$PID1"
-            echo "$PID1" > artifact/emulator-qa/pid-first-launch.txt
-            adb exec-out screencap -p > artifact/emulator-qa/first-launch.png
-            adb shell dumpsys activity activities > artifact/emulator-qa/activity-first-launch.txt
-            grep -q "$PKG" artifact/emulator-qa/activity-first-launch.txt
-
-            adb shell am force-stop "$PKG"
-            sleep 2
-            if adb shell pidof "$PKG" | grep -q '[0-9]'; then
-              echo 'process survived force-stop unexpectedly' >&2
-              exit 71
-            fi
-            adb shell am start -W -n "$ACTIVITY" | tee artifact/emulator-qa/launch-2.txt
-            grep -q 'Status: ok' artifact/emulator-qa/launch-2.txt
-            sleep 8
-            PID2="$(adb shell pidof "$PKG" | tr -d '\r')"
-            test -n "$PID2"
-            echo "$PID2" > artifact/emulator-qa/pid-second-launch.txt
-            adb exec-out screencap -p > artifact/emulator-qa/second-launch.png
-
-            adb logcat -d -v threadtime > artifact/emulator-qa/logcat.txt
-            if grep -q "ANR in $PKG" artifact/emulator-qa/logcat.txt; then
-              echo 'LUME ANR detected in logcat' >&2
-              exit 72
-            fi
-            if grep -q 'FATAL EXCEPTION' artifact/emulator-qa/logcat.txt && grep -q "Process: $PKG" artifact/emulator-qa/logcat.txt; then
-              echo 'LUME fatal exception detected in logcat' >&2
-              exit 73
-            fi
-            echo 'EMULATOR_SMOKE=pass' | tee artifact/emulator-qa/result.txt
+          script: bash tool/android_emulator_smoke.sh
 
       - name: Upload emulator smoke evidence
         if: always()
