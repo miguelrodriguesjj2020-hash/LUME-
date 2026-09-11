@@ -13,7 +13,7 @@
            length: 3,
            child: Scaffold(
              appBar: AppBar(
-@@ -56,7 +60,8 @@
+@@ -56,6 +60,7 @@
                _Shelf(loader: repo.manga, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
              ]),
            ),
