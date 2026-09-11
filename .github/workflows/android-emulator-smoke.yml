@@ -52,6 +52,7 @@ jobs:
           script: |
             set -euo pipefail
             PKG=br.com.lume.bibliotecaestudantil
+            ACTIVITY="$PKG/.MainActivity"
             APK="$(find artifact -type f -name app-release.apk -print -quit)"
             mkdir -p artifact/emulator-qa
             adb wait-for-device
@@ -67,7 +68,8 @@ jobs:
 
             adb logcat -c
             adb shell am force-stop "$PKG"
-            adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 | tee artifact/emulator-qa/launch-1.txt
+            adb shell am start -W -n "$ACTIVITY" | tee artifact/emulator-qa/launch-1.txt
+            grep -q 'Status: ok' artifact/emulator-qa/launch-1.txt
             sleep 8
             PID1="$(adb shell pidof "$PKG" | tr -d '\r')"
             test -n "$PID1"
@@ -82,7 +84,8 @@ jobs:
               echo 'process survived force-stop unexpectedly' >&2
               exit 71
             fi
-            adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 | tee artifact/emulator-qa/launch-2.txt
+            adb shell am start -W -n "$ACTIVITY" | tee artifact/emulator-qa/launch-2.txt
+            grep -q 'Status: ok' artifact/emulator-qa/launch-2.txt
             sleep 8
             PID2="$(adb shell pidof "$PKG" | tr -d '\r')"
             test -n "$PID2"
@@ -90,9 +93,13 @@ jobs:
             adb exec-out screencap -p > artifact/emulator-qa/second-launch.png
 
             adb logcat -d -v threadtime > artifact/emulator-qa/logcat.txt
-            if grep -E "ANR in ${PKG}|Process: ${PKG}" artifact/emulator-qa/logcat.txt | grep -E 'ANR|FATAL EXCEPTION'; then
-              echo 'LUME crash/ANR signature detected in logcat' >&2
+            if grep -q "ANR in $PKG" artifact/emulator-qa/logcat.txt; then
+              echo 'LUME ANR detected in logcat' >&2
               exit 72
+            fi
+            if grep -q 'FATAL EXCEPTION' artifact/emulator-qa/logcat.txt && grep -q "Process: $PKG" artifact/emulator-qa/logcat.txt; then
+              echo 'LUME fatal exception detected in logcat' >&2
+              exit 73
             fi
             echo 'EMULATOR_SMOKE=pass' | tee artifact/emulator-qa/result.txt
 
