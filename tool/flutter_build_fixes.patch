@@ -149,7 +149,7 @@ diff --git a/lib/services/session_vault.dart b/lib/services/session_vault.dart
 index ef9d181..9fa47a9 100644
 --- a/lib/services/session_vault.dart
 +++ b/lib/services/session_vault.dart
-@@ -1,16 +1,109 @@
+@@ -1,16 +1,119 @@
 +import 'dart:convert';
 +import 'package:flutter_secure_storage/flutter_secure_storage.dart';
  import 'api.dart';
@@ -199,11 +199,19 @@ index ef9d181..9fa47a9 100644
 +  static const _key='session_v1';
 +  static const _schema=1;
 +  final SessionSecretStore secrets;
++  Future<void> _tail=Future<void>.value();
 +
 +  SecureSessionVault(this.secrets);
 +
++  Future<void> _enqueue(Future<void> Function() operation){
++    final next=_tail.then((_)=>operation());
++    _tail=next.catchError((_){ });
++    return next;
++  }
++
 +  @override
 +  Future<LumeSession?> load() async {
++    await _tail;
 +    try{
 +      final raw=await secrets.read(_key);
 +      if(raw==null || raw.isEmpty)return null;
@@ -238,26 +246,29 @@ index ef9d181..9fa47a9 100644
 +  }
 +
 +  @override
-+  Future<void> save(LumeSession session) async {
++  Future<void> save(LumeSession session) {
 +    final token=session.token;
 +    final profileId=session.profileId;
 +    final role=session.role;
 +    final expiresAt=session.expiresAt;
-+    if(!session.authenticated || token==null || profileId==null || role==null || expiresAt==null){
-+      await clear();
-+      return;
-+    }
-+    await secrets.write(_key,jsonEncode({
-+      'schema':_schema,
-+      'token':token,
-+      'profileId':profileId,
-+      'role':role,
-+      'expiresAt':expiresAt,
-+    }));
++    final authenticated=session.authenticated;
++    return _enqueue(() async {
++      if(!authenticated || token==null || profileId==null || role==null || expiresAt==null){
++        await secrets.delete(_key);
++        return;
++      }
++      await secrets.write(_key,jsonEncode({
++        'schema':_schema,
++        'token':token,
++        'profileId':profileId,
++        'role':role,
++        'expiresAt':expiresAt,
++      }));
++    });
 +  }
 +
 +  @override
-+  Future<void> clear()=>secrets.delete(_key);
++  Future<void> clear()=>_enqueue(()=>secrets.delete(_key));
 +}
 +
  class MemorySessionVault implements SessionVault {
@@ -311,4 +322,3 @@ index a3ecddc..889d742 100644
 +  flutter_secure_storage: ^11.1.0
  
    path_provider: ^2.1.5
- 
