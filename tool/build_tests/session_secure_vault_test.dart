@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lume/services/api.dart';
@@ -15,6 +16,18 @@ class FakeSessionSecretStore implements SessionSecretStore {
 
   @override
   Future<void> delete(String key) async{values.remove(key);deletes++;}
+}
+
+class BlockingWriteSessionSecretStore extends FakeSessionSecretStore {
+  final writeStarted=Completer<void>();
+  final releaseWrite=Completer<void>();
+
+  @override
+  Future<void> write(String key,String value) async{
+    if(!writeStarted.isCompleted)writeStarted.complete();
+    await releaseWrite.future;
+    await super.write(key,value);
+  }
 }
 
 LumeSession validSession()=>LumeSession()
@@ -75,5 +88,39 @@ void main(){
     await vault.save(LumeSession());
     expect(secrets.values,isEmpty);
     expect(secrets.deletes,1);
+  });
+
+  test('clear ordered after an in-flight save cannot resurrect credentials',() async{
+    final secrets=BlockingWriteSessionSecretStore();
+    final vault=SecureSessionVault(secrets);
+    final saveFuture=vault.save(validSession());
+    await secrets.writeStarted.future;
+    final clearFuture=vault.clear();
+    secrets.releaseWrite.complete();
+    await saveFuture;
+    await clearFuture;
+    expect(secrets.values,isEmpty);
+    expect(secrets.deletes,1);
+  });
+
+  test('save persists an immutable snapshot even if caller mutates session',() async{
+    final secrets=BlockingWriteSessionSecretStore();
+    final vault=SecureSessionVault(secrets);
+    final session=validSession();
+    final expectedExpiry=session.expiresAt;
+    final saveFuture=vault.save(session);
+    await secrets.writeStarted.future;
+    session
+      ..token='mutated-token'
+      ..profileId='other-profile'
+      ..role='admin'
+      ..expiresAt=DateTime.now().add(const Duration(days:30)).millisecondsSinceEpoch;
+    secrets.releaseWrite.complete();
+    await saveFuture;
+    final json=Map<String,dynamic>.from(jsonDecode(secrets.values['session_v1']!));
+    expect(json['token'],'token-123');
+    expect(json['profileId'],'student-7');
+    expect(json['role'],'consumer');
+    expect(json['expiresAt'],expectedExpiry);
   });
 }
