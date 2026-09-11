@@ -1,4 +1,28 @@
-acementCoordinator');
+it directory.create(recursive: true);
+    final target = File('${directory.path}/$editionId.bin');
+    final part = File('${target.path}.part');
+    var localBytes = await part.exists() ? await part.length() : 0;
+    final previous = await db.getOfflineAsset(editionId);
+    final previousEtag = previous?['etag'] as String?;
+    final previousSourceTag=previous?['source_tag'] as String?;
+    final pinned = (previous?['pinned'] as num?)?.toInt() == 1;
+    var retryCount = (previous?['retry_count'] as num?)?.toInt() ?? 0;
+    String? effectiveEtag = previousEtag;
+
+    // A partial belongs to one exact media revision. Never append bytes from a
+    // newly resolved source to a stale partial merely because the filename is identical.
+    if(localBytes>0 && (sourceTag==null || sourceTag.isEmpty || previousSourceTag==null || previousSourceTag!=sourceTag ||
+        (expectedBytes!=null && localBytes>expectedBytes))){
+      await part.delete();
+      localBytes=0;
+      effectiveEtag=null;
+      retryCount++;
+    }
+    // A normal download must never overwrite an already verified READY copy.
+    // Media refreshes use MediaReplacementCoordinator's shadow-slot protocol.
+    if(previous?['state']=='ready' && await target.exists()){
+      if(sourceTag==null || previousSourceTag==sourceTag)return target;
+      throw StateError('READY asset update requires MediaReplacementCoordinator');
     }
 
     // Persist the reservation before evaluating the shared disk budget. This

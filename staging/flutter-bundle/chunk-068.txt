@@ -1,4 +1,39 @@
-'dart:math';
+ry:mediaDirectory,
+      resolve:() async {
+        final media=MediaDescriptor.fromJson(await api.media(editionId));
+        return ResolvedDownload(uri:media.url,expectedBytes:media.byteSize,expectedSha256:media.sha256,sourceTag:media.fingerprint,headers:media.headers);
+      },
+    ));
+  }
+
+  void _onProgress(String editionId, OfflineState state, int receivedBytes, int? expectedBytes){
+    if(!_changes.isClosed)_changes.add(DownloadSnapshot(editionId,state.name,receivedBytes,expectedBytes));
+  }
+
+  Future<void> reconcile() async {
+    for(final row in await db.recoverableDownloadJobs()){
+      if(row['state']=='queued')_queue(row['edition_id'] as String);
+    }
+  }
+
+  Future<void> dispose() async { await _changes.close(); }
+
+  Future<void> _onTerminal(String editionId,String state) async {
+    if(state=='cancelled'){await db.deleteDownloadJob(editionId);return;}
+    await db.setDownloadJobState(editionId,state);
+    if(state=='ready'){
+      final jobs=await db.listDownloadJobs();
+      for(final row in jobs){
+        if(row['edition_id']==editionId){final req=Map<String,dynamic>.from(row['request'] as Map);if(req['pinned']==true)await db.setOfflinePinned(editionId,true);break;}
+      }
+    }
+  }
+}
+
+FILE 38 1567
+flutter/lib/services/retry_policy.dart
+import 'dart:async';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'api.dart';
 

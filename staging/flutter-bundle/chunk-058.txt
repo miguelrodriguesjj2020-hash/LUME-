@@ -1,4 +1,30 @@
-'temp_path'] as String?)??'$targetPath.replacement.part');
+    final expected=(row['expected_bytes'] as num?)?.toInt();
+    if(expected!=null && await file.length()!=expected) return false;
+    final expectedSha=(row['sha256'] as String?)?.trim().toLowerCase();
+    if(expectedSha!=null && expectedSha.isNotEmpty){
+      final digest=await sha256.bind(file.openRead()).first;
+      if(digest.toString().toLowerCase()!=expectedSha) return false;
+    }
+    // If neither strong hash nor expected size exists, do not call an
+    // interrupted successor verified merely because a file happens to exist.
+    return expected!=null || (expectedSha!=null && expectedSha.isNotEmpty);
+  }
+
+  Future<ReplacementRecoveryReport> recoverAll(Directory mediaDirectory) async {
+    var finalized=0, rolledBack=0, partial=0, cleaned=0;
+    final rows=await db.listMediaReplacements();
+    final referenced=<String>{};
+    for(final row in rows){
+      final editionId=row['edition_id'] as String;
+      final asset=await db.getOfflineAsset(editionId);
+      final targetPath=asset?['local_path'] as String?;
+      if(targetPath==null || targetPath.isEmpty){
+        // Without a canonical READY path we cannot perform a safe swap.
+        final p=File(row['temp_path'] as String); if(await p.exists()){referenced.add(p.path);partial++;}
+        continue;
+      }
+      final target=File(targetPath);
+      final part=File((row['temp_path'] as String?)??'$targetPath.replacement.part');
       final staged=File((row['staged_path'] as String?)??'$targetPath.replacement.ready');
       final backup=File((row['backup_path'] as String?)??'$targetPath.previous');
       referenced.addAll([part.path,staged.path,backup.path]);
