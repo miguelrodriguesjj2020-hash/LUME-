@@ -1,7 +1,7 @@
-diff --git a/lib/main.dart b/lib/main.dart
+diff --git a/flutter/lib/main.dart b/flutter/lib/main.dart
 index 026fc5d..810468c 100644
---- a/lib/main.dart
-+++ b/lib/main.dart
+--- a/flutter/lib/main.dart
++++ b/flutter/lib/main.dart
 @@ -22,13 +22,14 @@ class LumeBootstrap extends StatefulWidget {
  
  class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserver {
@@ -84,10 +84,10 @@ index 026fc5d..810468c 100644
 +        : CatalogPage(services:services!),
    );
  }
-diff --git a/lib/services/cbz_preparer.dart b/lib/services/cbz_preparer.dart
+diff --git a/flutter/lib/services/cbz_preparer.dart b/flutter/lib/services/cbz_preparer.dart
 index 7dbaf42..e35307d 100644
---- a/lib/services/cbz_preparer.dart
-+++ b/lib/services/cbz_preparer.dart
+--- a/flutter/lib/services/cbz_preparer.dart
++++ b/flutter/lib/services/cbz_preparer.dart
 @@ -51,7 +51,6 @@ class CbzPreparer {
          final outPath=p.normalize(p.absolute(p.join(destination.path,name)));
          if(!(outPath==root || p.isWithin(root,outPath)))throw CbzPrepareException('path escapes destination: $name');
@@ -96,10 +96,10 @@ index 7dbaf42..e35307d 100644
          final out=File(outPath);
          await out.parent.create(recursive:true);
          await out.writeAsBytes(data,flush:false);
-diff --git a/lib/services/epub_preparer.dart b/lib/services/epub_preparer.dart
+diff --git a/flutter/lib/services/epub_preparer.dart b/flutter/lib/services/epub_preparer.dart
 index b0e968f..4cf1569 100644
---- a/lib/services/epub_preparer.dart
-+++ b/lib/services/epub_preparer.dart
+--- a/flutter/lib/services/epub_preparer.dart
++++ b/flutter/lib/services/epub_preparer.dart
 @@ -1,5 +1,4 @@
  import 'dart:io';
 -import 'dart:convert';
@@ -145,10 +145,10 @@ index b0e968f..4cf1569 100644
              .replaceAllMapped(RegExp(r'''url\(\s*(["']?)(?:https?|file|content|javascript):[^\)]*\)''', caseSensitive: false), (_) => 'url(about:blank)')
              .replaceAll(RegExp(r'javascript\s*:', caseSensitive: false), 'about:blank:')
              .replaceAllMapped(RegExp(r'''((?:xlink:)?href|src)\s*=\s*(["'])(?:https?|file|content|javascript):[^"']*\2''', caseSensitive: false), (m) => '${m.group(1)}=${m.group(2)}about:blank${m.group(2)}')
-diff --git a/lib/services/session_vault.dart b/lib/services/session_vault.dart
+diff --git a/flutter/lib/services/session_vault.dart b/flutter/lib/services/session_vault.dart
 index ef9d181..9fa47a9 100644
---- a/lib/services/session_vault.dart
-+++ b/lib/services/session_vault.dart
+--- a/flutter/lib/services/session_vault.dart
++++ b/flutter/lib/services/session_vault.dart
 @@ -1,16 +1,120 @@
 +import 'dart:convert';
 +import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -274,10 +274,10 @@ index ef9d181..9fa47a9 100644
  class MemorySessionVault implements SessionVault {
    LumeSession? _session;
  
-diff --git a/lib/services/storage_policy.dart b/lib/services/storage_policy.dart
+diff --git a/flutter/lib/services/storage_policy.dart b/flutter/lib/services/storage_policy.dart
 index 1125483..09d8587 100644
---- a/lib/services/storage_policy.dart
-+++ b/lib/services/storage_policy.dart
+--- a/flutter/lib/services/storage_policy.dart
++++ b/flutter/lib/services/storage_policy.dart
 @@ -17,7 +17,8 @@ class StoragePressurePolicy {
      final ready=await db.readyOfflineBytes();
      final reserved=await db.reservedOfflineBytes();
@@ -288,10 +288,10 @@ index 1125483..09d8587 100644
    }
  
    Future<StoragePolicyResult> freeAtLeast(int bytesNeeded) async {
-diff --git a/lib/ui/catalog_page.dart b/lib/ui/catalog_page.dart
+diff --git a/flutter/lib/ui/catalog_page.dart b/flutter/lib/ui/catalog_page.dart
 index 0d092f5..19b822e 100644
---- a/lib/ui/catalog_page.dart
-+++ b/lib/ui/catalog_page.dart
+--- a/flutter/lib/ui/catalog_page.dart
++++ b/flutter/lib/ui/catalog_page.dart
 @@ -210,7 +210,7 @@ class _EditionSheet extends StatelessWidget {
            subtitle: Text(unsupportedCbr
                ? 'CBR · indisponível até validação RAR segura'
@@ -301,10 +301,10 @@ index 0d092f5..19b822e 100644
              IconButton(
                tooltip:unsupportedCbr ? 'CBR ainda não suportado' : 'Baixar para leitura offline',
                icon:Icon(unsupportedCbr ? Icons.block : Icons.download_outlined),
-diff --git a/pubspec.yaml b/pubspec.yaml
+diff --git a/flutter/pubspec.yaml b/flutter/pubspec.yaml
 index a3ecddc..889d742 100644
---- a/pubspec.yaml
-+++ b/pubspec.yaml
+--- a/flutter/pubspec.yaml
++++ b/flutter/pubspec.yaml
 @@ -1,7 +1,7 @@
  name: lume
 -version: 0.35.0+35
