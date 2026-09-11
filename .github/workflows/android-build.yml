@@ -50,7 +50,7 @@ jobs:
             grep -q 'package:flutter_lints/flutter.yaml' flutter/analysis_options.yaml
             rm flutter/analysis_options.yaml
           fi
-          grep -q '^version: 0.35.1+36$' flutter/pubspec.yaml
+          grep -q '^version: 0.35.2+37$' flutter/pubspec.yaml
 
       - name: Resolve dependencies
         working-directory: flutter
