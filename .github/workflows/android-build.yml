@@ -13,17 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.13'
 
       - name: Reconstruct and verify exact Flutter source
         run: python tool/reconstruct_flutter_bundle.py
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
+          flutter-version: '3.47.3'
           channel: stable
           cache: true
 
@@ -36,6 +37,35 @@ jobs:
       - name: Generate Android scaffold
         working-directory: flutter
         run: flutter create --platforms=android --project-name=lume .
+
+      - name: Harden generated Android scaffold
+        run: python tool/harden_android_scaffold.py
+
+      - name: Prepare optional production signing
+        env:
+          LUME_ANDROID_KEYSTORE_B64: ${{ secrets.LUME_ANDROID_KEYSTORE_B64 }}
+          LUME_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.LUME_ANDROID_KEYSTORE_PASSWORD }}
+          LUME_ANDROID_KEY_ALIAS: ${{ secrets.LUME_ANDROID_KEY_ALIAS }}
+          LUME_ANDROID_KEY_PASSWORD: ${{ secrets.LUME_ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p flutter/build/qa
+          if [ -n "${LUME_ANDROID_KEYSTORE_B64:-}" ]; then
+            test -n "${LUME_ANDROID_KEYSTORE_PASSWORD:-}"
+            test -n "${LUME_ANDROID_KEY_ALIAS:-}"
+            test -n "${LUME_ANDROID_KEY_PASSWORD:-}"
+            printf '%s' "$LUME_ANDROID_KEYSTORE_B64" | base64 --decode > flutter/android/app/lume-release.jks
+            chmod 600 flutter/android/app/lume-release.jks
+            cat > flutter/android/key.properties <<EOF
+          storePassword=$LUME_ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$LUME_ANDROID_KEY_PASSWORD
+          keyAlias=$LUME_ANDROID_KEY_ALIAS
+          storeFile=lume-release.jks
+          EOF
+            echo 'SIGNING_INPUT=production-secret-material-present' > flutter/build/qa/signing-input.txt
+          else
+            echo 'SIGNING_INPUT=qa-debug-fallback' > flutter/build/qa/signing-input.txt
+          fi
 
       - name: Apply audited build fixes
         run: |
@@ -50,7 +80,10 @@ jobs:
             grep -q 'package:flutter_lints/flutter.yaml' flutter/analysis_options.yaml
             rm flutter/analysis_options.yaml
           fi
-          grep -q '^version: 0.35.2+37$' flutter/pubspec.yaml
+          grep -q '^version: 0.35.3+38$' flutter/pubspec.yaml
+          command -v zip >/dev/null
+          command -v python3 >/dev/null
+          cp tool/build_tests/*.dart flutter/test/
 
       - name: Resolve dependencies
         working-directory: flutter
@@ -58,30 +91,88 @@ jobs:
 
       - name: Analyze
         working-directory: flutter
-        run: flutter analyze --fatal-infos
+        run: |
+          set -o pipefail
+          mkdir -p build/qa
+          flutter analyze --fatal-infos | tee build/qa/flutter-analyze.log
 
       - name: Flutter tests
         working-directory: flutter
-        run: flutter test
+        run: |
+          set -o pipefail
+          flutter test | tee build/qa/flutter-test.log
 
-      - name: Build release APK
+      - name: Build QA release APK
         working-directory: flutter
         env:
           LUME_API_BASE: ${{ secrets.LUME_API_BASE }}
         run: |
-          if [ -n "$LUME_API_BASE" ]; then
+          set -euo pipefail
+          if [ -n "${LUME_API_BASE:-}" ]; then
+            case "$LUME_API_BASE" in
+              https://*) ;;
+              *) echo 'LUME_API_BASE must use HTTPS for an Android release candidate' >&2; exit 64;;
+            esac
             flutter build apk --release --dart-define=LUME_API_BASE="$LUME_API_BASE"
+            echo 'API_BASE_STATUS=configured-https' > build/qa/api-base-status.txt
           else
             flutter build apk --release
+            echo 'API_BASE_STATUS=placeholder-lume.invalid' > build/qa/api-base-status.txt
           fi
           sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app/outputs/flutter-apk/app-release.apk.sha256
 
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
+      - name: Audit Android APK metadata and signature
+        working-directory: flutter
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          QA=build/qa
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          test -x "$AAPT"
+          test -x "$APKSIGNER"
+          "$AAPT" dump badging "$APK" | tee "$QA/aapt-badging.txt"
+          "$AAPT" dump permissions "$APK" | tee "$QA/aapt-permissions.txt"
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee "$QA/aapt-manifest-tree.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$QA/apksigner.txt"
+          grep -q "package: name='br.com.lume.bibliotecaestudantil'" "$QA/aapt-badging.txt"
+          grep -q "versionCode='38'" "$QA/aapt-badging.txt"
+          grep -q "versionName='0.35.3'" "$QA/aapt-badging.txt"
+          grep -q "application-label:'LUME'" "$QA/aapt-badging.txt"
+          grep -q "uses-permission: name='android.permission.INTERNET'" "$QA/aapt-permissions.txt"
+          if grep -q '^application-debuggable' "$QA/aapt-badging.txt"; then
+            echo 'Release APK is unexpectedly debuggable' >&2
+            exit 65
+          fi
+          unzip -t "$APK" > "$QA/apk-zip-integrity.txt"
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            unzip -l "$APK" "lib/$ABI/libapp.so" | grep -q "lib/$ABI/libapp.so"
+          done
+          unzip -p "$APK" lib/arm64-v8a/libapp.so > "$QA/libapp-arm64.so"
+          if strings "$QA/libapp-arm64.so" | grep -q 'https://lume.invalid'; then
+            echo 'EMBEDDED_API_STATUS=placeholder-lume.invalid' | tee "$QA/embedded-api-status.txt"
+          else
+            echo 'EMBEDDED_API_STATUS=non-placeholder' | tee "$QA/embedded-api-status.txt"
+          fi
+          rm "$QA/libapp-arm64.so"
+          if grep -q 'CN=Android Debug' "$QA/apksigner.txt"; then
+            echo 'SIGNING_STATUS=qa-debug-certificate' | tee "$QA/signing-status.txt"
+          else
+            echo 'SIGNING_STATUS=non-debug-certificate' | tee "$QA/signing-status.txt"
+          fi
+          if grep -q '^SIGNING_STATUS=non-debug-certificate$' "$QA/signing-status.txt" && grep -q '^EMBEDDED_API_STATUS=non-placeholder$' "$QA/embedded-api-status.txt"; then
+            echo 'APK_CLASSIFICATION=production-signing-and-api-config-present' | tee "$QA/apk-classification.txt"
+          else
+            echo 'APK_CLASSIFICATION=qa-only-not-for-distribution' | tee "$QA/apk-classification.txt"
+          fi
+
+      - name: Upload QA APK and audit evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: lume-release-apk
+          name: lume-qa-release-apk
           path: |
             flutter/build/app/outputs/flutter-apk/app-release.apk
             flutter/build/app/outputs/flutter-apk/app-release.apk.sha256
+            flutter/build/qa/*
           if-no-files-found: error
           retention-days: 14
