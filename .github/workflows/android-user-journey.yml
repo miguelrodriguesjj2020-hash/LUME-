@@ -1,0 +1,94 @@
+name: LUME Android Student Journey
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, rc-user-journey-01 ]
+
+permissions:
+  contents: read
+
+jobs:
+  student-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+
+      - name: Reconstruct exact Flutter source
+        run: python tool/reconstruct_flutter_bundle.py
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: '3.47.3'
+          channel: stable
+          cache: true
+
+      - name: Generate and harden Android scaffold
+        run: |
+          set -euo pipefail
+          cd flutter
+          flutter create --platforms=android --project-name=lume .
+          cd ..
+          python tool/harden_android_scaffold.py
+          git apply --check tool/flutter_build_fixes.patch
+          git apply tool/flutter_build_fixes.patch
+          rm -f flutter/test/widget_test.dart flutter/analysis_options.yaml
+
+      - name: Build isolated user-journey APK
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('flutter/android/app/src/main/AndroidManifest.xml')
+          s=p.read_text()
+          old='android:usesCleartextTraffic="false"'
+          if old not in s: raise SystemExit('expected hardened cleartext=false manifest')
+          p.write_text(s.replace(old,'android:usesCleartextTraffic="true"',1))
+          PY
+          cd flutter
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
+          flutter build apk --release --dart-define=LUME_API_BASE=http://10.0.2.2:18787
+          sha256sum build/app/outputs/flutter-apk/app-release.apk | tee ../journey-apk.sha256
+
+      - name: Enable KVM acceleration
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -e /dev/kvm
+          sudo chmod 666 /dev/kvm
+
+      - name: Student journey on Android 15
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          cores: 2
+          ram-size: 3072
+          force-avd-creation: true
+          disable-animations: true
+          disable-linux-hw-accel: false
+          emulator-boot-timeout: 900
+          emulator-options: -no-snapshot-save -no-snapshot-load -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none -no-metrics
+          script: bash tool/android_user_journey.sh
+
+      - name: Upload user-journey evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lume-android15-user-journey
+          path: |
+            artifact/user-journey/*
+            journey-apk.sha256
+          if-no-files-found: warn
+          retention-days: 14
