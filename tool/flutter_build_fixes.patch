@@ -28,7 +28,13 @@
          await out.writeAsBytes(data,flush:false);
 --- a/flutter/lib/services/epub_preparer.dart
 +++ b/flutter/lib/services/epub_preparer.dart
-@@ -44,7 +44,7 @@
+@@ -1,5 +1,4 @@
+ import 'dart:io';
+-import 'dart:convert';
+ import 'package:archive/archive_io.dart';
+ import 'package:path/path.dart' as p;
+ 
+@@ -44,7 +43,7 @@
        if (entry.isFile) {
          final out = File(outPath)..createSync(recursive: true);
          final data = entry.content;
@@ -37,7 +43,7 @@
        } else {
          Directory(outPath).createSync(recursive: true);
        }
-@@ -55,18 +55,18 @@
+@@ -55,18 +54,18 @@
      final container = File(p.join(destination.path, 'META-INF', 'container.xml'));
      if (!await container.exists()) throw const EpubPrepareException('container.xml missing');
      final cxml = await container.readAsString();
@@ -87,7 +93,7 @@
 @@ -1,5 +1,5 @@
  name: lume
 -version: 0.35.0+35
-+version: 0.35.1+36
++version: 0.35.2+37
  environment:
    sdk: '>=3.3.0 <4.0.0'
  dependencies:
