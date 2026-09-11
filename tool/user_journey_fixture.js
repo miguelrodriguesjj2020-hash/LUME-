@@ -1,3 +1,4 @@
+// Test-only deterministic backend for the Android student-journey release gate.
 const http=require('http');
 const fs=require('fs');
 const crypto=require('crypto');
