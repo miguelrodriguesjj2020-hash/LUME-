@@ -13,7 +13,17 @@ expected_names=[f'chunk-{i:03d}.txt' for i in range(int(manifest['firstChunk']),
 actual_names=[p.name for p in chunks]
 if actual_names!=expected_names:
     raise SystemExit('chunk sequence mismatch')
-bundle=b''.join(p.read_bytes() for p in chunks)
+
+correction=(STAGING/'CHUNK_068_CORRECTION.txt').read_text().strip()
+if correction!='APPEND_ASCII_40':
+    raise SystemExit('invalid chunk 068 correction marker')
+parts=[]
+for p in chunks:
+    data=p.read_bytes()
+    if p.name=='chunk-068.txt':
+        data+=bytes([40])
+    parts.append(data)
+bundle=b''.join(parts)
 if len(bundle)!=int(manifest['bundleBytes']):
     raise SystemExit(f'bundle size mismatch: {len(bundle)} != {manifest["bundleBytes"]}')
 digest=hashlib.sha256(bundle).hexdigest()
