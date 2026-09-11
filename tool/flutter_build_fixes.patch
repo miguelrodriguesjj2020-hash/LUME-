@@ -315,7 +315,7 @@ index a3ecddc..889d742 100644
  dependencies:
    flutter:
      sdk: flutter
-@@ -13,6 +13,7 @@ dependencies:
+@@ -13,5 +13,6 @@ dependencies:
    pdfx: ^2.11.0
    webview_flutter: ^4.7.0
    connectivity_plus: ^6.1.5
