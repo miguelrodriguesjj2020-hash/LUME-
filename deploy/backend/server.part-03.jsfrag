@@ -1,0 +1,138 @@
+edition TEXT NOT NULL,
+        json TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS ops(
+        profile TEXT NOT NULL,
+        op_id TEXT NOT NULL,
+        edition TEXT NOT NULL,
+        PRIMARY KEY(profile,op_id)
+      );
+      CREATE TABLE IF NOT EXISTS media(
+        edition TEXT PRIMARY KEY,
+        json TEXT NOT NULL
+      );
+    `);
+  }
+
+  _load(){
+    const rev=this.db.prepare("SELECT v FROM state WHERE k='revision'").get();
+    this.revision=rev?Number(rev.v):1;
+    this.works=this.db.prepare('SELECT json FROM works ORDER BY ordinal').all().map(r=>JSON.parse(r.json));
+    this.tombstones=this.db.prepare('SELECT json FROM tombstones ORDER BY ordinal').all().map(r=>JSON.parse(r.json));
+    this.progress=new Map(this.db.prepare('SELECT profile,edition,json FROM progress').all()
+      .map(r=>[`${r.profile}:${r.edition}`,JSON.parse(r.json)]));
+    this.events=this.db.prepare('SELECT json FROM events ORDER BY seq').all().map(r=>JSON.parse(r.json));
+    this.ops=new Map(this.db.prepare('SELECT profile,op_id,edition FROM ops').all()
+      .map(r=>[`${r.profile}:${r.op_id}`,{edition:r.edition}]));
+    this.media=new Map(this.db.prepare('SELECT edition,json FROM media').all()
+      .map(r=>[r.edition,JSON.parse(r.json)]));
+  }
+
+  _tx(fn){
+    this.db.exec('BEGIN IMMEDIATE');
+    try{
+      const value=fn();
+      this.db.exec('COMMIT');
+      return value;
+    }catch(e){
+      try{this.db.exec('ROLLBACK');}catch{}
+      throw e;
+    }
+  }
+
+  installCatalog(manifest){
+    validateCatalogManifest(manifest);
+    const {revision,works,tombstones=[]}=manifest;
+    if(revision<this.revision)throw new Error('stale revision');
+    if(revision===this.revision && this.works.length){
+      const same=JSON.stringify({works:this.works,tombstones:this.tombstones})===JSON.stringify({works,tombstones});
+      if(!same)throw new Error('revision reuse with different catalog');
+      return;
+    }
+    this._tx(()=>{
+      this.db.exec('DELETE FROM works; DELETE FROM tombstones;');
+      const iw=this.db.prepare('INSERT INTO works(id,ordinal,json) VALUES(?,?,?)');
+      works.forEach((w,i)=>iw.run(w.id,i,JSON.stringify(w)));
+      const it=this.db.prepare('INSERT INTO tombstones(ordinal,json) VALUES(?,?)');
+      tombstones.forEach((t,i)=>it.run(i,JSON.stringify(t)));
+      this.db.prepare("INSERT INTO state(k,v) VALUES('revision',?) ON CONFLICT(k) DO UPDATE SET v=excluded.v").run(String(revision));
+    });
+    this.revision=revision;
+    this.works=structuredClone(works);
+    this.tombstones=structuredClone(tombstones);
+  }
+
+  registerMedia(id,meta){
+    if(typeof id!=='string'||!id.trim())throw new Error('media id required');
+    const copy={...meta};
+    this.db.prepare('INSERT INTO media(edition,json) VALUES(?,?) ON CONFLICT(edition) DO UPDATE SET json=excluded.json')
+      .run(id,JSON.stringify(copy));
+    this.media.set(id,copy);
+  }
+
+  removeMedia(id){
+    if(typeof id!=='string'||!id.trim())throw new Error('media id required');
+    const result=this.db.prepare('DELETE FROM media WHERE edition=?').run(id);
+    this.media.delete(id);
+    return Number(result.changes||0)>0;
+  }
+
+  putProgress(profile,edition,p){
+    if(typeof p?.opId!=='string'||!p.opId.trim())throw new Error('opId required');
+    if(typeof edition!=='string'||!edition.trim())throw new Error('editionId required');
+    if(!Number.isInteger(p.clientUpdatedAt)||p.clientUpdatedAt<0)throw new Error('invalid clientUpdatedAt');
+    if(typeof p.completed!=='boolean')throw new Error('completed must be boolean');
+    if(typeof p.percent!=='number'||!Number.isFinite(p.percent)||p.percent<0||p.percent>1)throw new Error('invalid percent');
+    if(!p.locator||typeof p.locator!=='object'||Array.isArray(p.locator))throw new Error('invalid locator');
+
+    const opKey=`${profile}:${p.opId}`;
+    const priorOp=this.ops.get(opKey);
+    if(priorOp){
+      if(priorOp.edition!==edition)throw new Error('opId reused for different edition');
+      return {duplicate:true,current:this.progress.get(`${profile}:${edition}`)};
+    }
+
+    const key=`${profile}:${edition}`;
+    const old=this.progress.get(key);
+    const incoming={...p,profileId:profile,editionId:edition};
+    const accept=!old||(!old.completed&&incoming.completed)||
+      (!old.completed&&!incoming.completed&&incoming.clientUpdatedAt>=old.clientUpdatedAt)||
+      (old.completed&&incoming.completed&&incoming.clientUpdatedAt>=old.clientUpdatedAt);
+    const seq=this.events.length+1;
+    const event=accept?{seq,profile,edition,payload:structuredClone(incoming)}:null;
+
+    this._tx(()=>{
+      this.db.prepare('INSERT INTO ops(profile,op_id,edition) VALUES(?,?,?)').run(profile,p.opId,edition);
+      if(accept){
+        this.db.prepare('INSERT INTO progress(profile,edition,json) VALUES(?,?,?) ON CONFLICT(profile,edition) DO UPDATE SET json=excluded.json')
+          .run(profile,edition,JSON.stringify(incoming));
+        this.db.prepare('INSERT INTO events(seq,profile,edition,json) VALUES(?,?,?,?)')
+          .run(seq,profile,edition,JSON.stringify(event));
+      }
+    });
+
+    this.ops.set(opKey,{edition});
+    if(accept){
+      this.progress.set(key,incoming);
+      this.events.push(event);
+      return {duplicate:false,accepted:true,seq,current:incoming};
+    }
+    return {duplicate:false,accepted:false,current:old};
+  }
+
+  readiness(){
+    try{
+      const check=this.db.prepare('PRAGMA quick_check').get();
+      return {ok:!!check&&check.quick_check==='ok',durable:true,revision:this.revision};
+    }catch(e){
+      return {ok:false,durable:true,revision:this.revision,error:'sqlite_unavailable'};
+    }
+  }
+
+  backupTo(destination){
+    if(typeof destination!=='string'||!destination.trim())throw new Error('backup destination required');
+    const dest=path.resolve(destination);
+    fs.mkdirSync(path.dirname(dest),{recursive:true});
+    if(fs.existsSync(dest))throw new Error('backup destination already exists');
+    const quoted=dest.replace(/'/g,"''");
+    this.db.exec(`VACUUM INTO '${quoted}'`);
