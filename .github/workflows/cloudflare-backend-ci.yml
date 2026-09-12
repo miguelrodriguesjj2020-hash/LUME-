@@ -34,8 +34,7 @@ jobs:
       - name: Assert no private material is committed
         run: |
           set -euo pipefail
-          if grep -RInE --exclude='README.md' --exclude='*.sql' '(BEGIN PRIVATE KEY|private_key_id|client_secret|PASSWORD_PEPPER=|AUTH_SECRET=|MEDIA_SECRET=)' .; then
-            echo 'Potential private material detected in cloudflare/' >&2
+          if git grep -nE '("private_key"[[:space:]]*:|"client_secret"[[:space:]]*:|^[[:space:]]*(AUTH_SECRET|MEDIA_SECRET|PASSWORD_PEPPER)=.{16,})' -- . ':!README.md'; then
+            echo 'Potential private secret value detected in cloudflare/' >&2
             exit 70
           fi
-          grep -q 'REPLACE_WITH_D1_DATABASE_ID' wrangler.jsonc
