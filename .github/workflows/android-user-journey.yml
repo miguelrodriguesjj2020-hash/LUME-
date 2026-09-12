@@ -41,6 +41,8 @@ jobs:
           git apply tool/catalog_initial_refresh_fix.patch
           git apply --check tool/material_icons_fix.patch
           git apply tool/material_icons_fix.patch
+          git apply --check tool/cbz_navigation_fix.patch
+          git apply tool/cbz_navigation_fix.patch
           git apply --check tool/user_journey_harness_fix.patch
           git apply tool/user_journey_harness_fix.patch
           rm -f flutter/test/widget_test.dart flutter/analysis_options.yaml
