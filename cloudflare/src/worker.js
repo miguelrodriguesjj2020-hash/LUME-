@@ -1,6 +1,6 @@
 import { passwordMac, signMedia, signSession, verifyMedia, verifySession } from './crypto.js';
 import { shouldAcceptProgress, validateCatalogManifest, validateProgress } from './catalog.js';
-import { proxyDriveFile } from './drive.js';
+import { proxyDriveFile, driveMediaMode } from './drive.js';
 
 const jsonHeaders = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' };
 const json = (status, value) => new Response(value === undefined ? null : JSON.stringify(value), { status, headers: jsonHeaders });
@@ -12,9 +12,7 @@ export function runtimeReady(env) {
   if (!strong(env.AUTH_SECRET)) issues.push('AUTH_SECRET must be at least 32 characters');
   if (!strong(env.MEDIA_SECRET)) issues.push('MEDIA_SECRET must be at least 32 characters');
   if (!strong(env.PASSWORD_PEPPER)) issues.push('PASSWORD_PEPPER must be at least 32 characters');
-  if (!env.GDRIVE_CLIENT_EMAIL) issues.push('GDRIVE_CLIENT_EMAIL missing');
-  if (!env.GDRIVE_PRIVATE_KEY) issues.push('GDRIVE_PRIVATE_KEY missing');
-  return { ok: issues.length === 0, issues };
+  return { ok: issues.length === 0, issues, mediaMode: driveMediaMode(env) };
 }
 
 async function readJson(request) {
@@ -145,9 +143,9 @@ export async function route(request, env) {
   if (request.method === 'GET' && path === '/v1/health') return json(200, { ok: true, service: 'lume', protocol: 1 });
   if (request.method === 'GET' && path === '/v1/ready') {
     const ready = runtimeReady(env);
-    if (!ready.ok) return json(503, { ok: false, durable: true, backend: 'cloudflare-d1', issues: ready.issues });
-    try { await env.DB.prepare('SELECT 1 AS ok').first(); return json(200, { ok: true, durable: true, backend: 'cloudflare-d1', revision: await getRevision(env.DB) }); }
-    catch { return json(503, { ok: false, durable: true, backend: 'cloudflare-d1', issues: ['D1 unavailable'] }); }
+    if (!ready.ok) return json(503, { ok: false, durable: true, backend: 'cloudflare-d1', mediaMode: ready.mediaMode, issues: ready.issues });
+    try { await env.DB.prepare('SELECT 1 AS ok').first(); return json(200, { ok: true, durable: true, backend: 'cloudflare-d1', mediaMode: ready.mediaMode, revision: await getRevision(env.DB) }); }
+    catch { return json(503, { ok: false, durable: true, backend: 'cloudflare-d1', mediaMode: ready.mediaMode, issues: ['D1 unavailable'] }); }
   }
   if (request.method === 'POST' && path === '/v1/auth/login') {
     if (!runtimeReady(env).ok) return json(503, { error: 'auth_not_configured' });
@@ -210,7 +208,7 @@ export async function route(request, env) {
     const meta = await env.DB.prepare('SELECT source_file_id FROM media WHERE edition=?').bind(edition).first();
     if (!meta) return json(404, { error: 'media_not_found' });
     try { return await proxyDriveFile(request, env, meta.source_file_id); }
-    catch (e) { return json(e.message === 'drive_not_configured' ? 503 : 502, { error: 'media_upstream_unavailable' }); }
+    catch { return json(502, { error: 'media_upstream_unavailable' }); }
   }
   return json(404, { error: 'not_found' });
 }
