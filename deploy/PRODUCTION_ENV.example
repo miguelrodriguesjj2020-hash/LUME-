@@ -1,0 +1,8 @@
+LUME_ENV=production
+LUME_DB_PATH=/data/lume.sqlite
+LUME_AUTH_SECRET=REPLACE_WITH_32_PLUS_RANDOM_CHARACTERS
+LUME_MEDIA_SECRET=REPLACE_WITH_32_PLUS_RANDOM_CHARACTERS
+LUME_USERS_JSON=[{"username":"admin","salt":"...","passwordHash":"...","role":"admin","profileId":"admin"},{"username":"aluno","salt":"...","passwordHash":"...","role":"consumer","profileId":"student-001"}]
+LUME_SEED_FILE=/seed/lume-seed.json
+LUME_REQUIRE_SEED=1
+LUME_SEED_PRUNE_MEDIA=1
