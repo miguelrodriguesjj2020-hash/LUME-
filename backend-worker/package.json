@@ -1,0 +1,7 @@
+{
+  "name":"lume-cloudflare-backend",
+  "private":true,
+  "type":"module",
+  "scripts":{"test":"node --test test/*.test.mjs","check":"node --check src/worker.mjs && node --check src/storage.mjs && node --check src/drive.mjs && node --check src/crypto.mjs"},
+  "devDependencies":{"wrangler":"^4.36.0"}
+}
