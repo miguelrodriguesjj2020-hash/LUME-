@@ -1,0 +1,26 @@
+.get('since'));return x?send(200,x):send(304);}
+  if(req.method==='POST'&&u.pathname==='/v1/admin/catalog'){if(!auth)return send(401,{error:'unauthorized'});if(auth.role!=='admin')return send(403,{error:'forbidden'});return readJson(req,(e,j)=>{if(e)return send(400,{error:'invalid_json'});try{store.installCatalog(j);send(200,{revision:store.revision});}catch(x){send(409,{error:x.message});}});}
+  if(req.method==='GET'&&u.pathname==='/v1/admin/media'){if(!auth)return send(401,{error:'unauthorized'});if(auth.role!=='admin')return send(403,{error:'forbidden'});return send(200,{entries:store.listMedia()});}
+  if(req.method==='POST'&&u.pathname==='/v1/admin/media'){if(!auth)return send(401,{error:'unauthorized'});if(auth.role!=='admin')return send(403,{error:'forbidden'});return readJson(req,(e,j)=>{if(e)return send(400,{error:'invalid_json'});try{const raw=Array.isArray(j.entries)?j.entries:[j];if(!raw.length)throw new Error('media entries required');const entries=raw.map(x=>validateMediaEntry(x,process.env));const known=new Set(store.works.flatMap(w=>(w.editions||[]).map(e=>e.id)));for(const entry of entries){if(!known.has(entry.editionId))throw new Error(`unknown catalog edition: ${entry.editionId}`);}for(const entry of entries){const {editionId,...meta}=entry;store.registerMedia(editionId,meta);}send(200,{registered:entries.length});}catch(x){send(400,{error:x.message});}});}
+  const adm=u.pathname.match(/^\/v1\/admin\/media\/([^/]+)$/);if(req.method==='DELETE'&&adm){if(!auth)return send(401,{error:'unauthorized'});if(auth.role!=='admin')return send(403,{error:'forbidden'});try{const removed=store.removeMedia(decodeURIComponent(adm[1]));return send(removed?200:404,{removed});}catch(x){return send(400,{error:x.message});}}
+  const sm=u.pathname.match(/^\/v1\/profiles\/([^/]+)\/sync$/); if(req.method==='POST'&&sm){if(!auth)return send(401,{error:'unauthorized'});if(!canAccessProfile(auth,sm[1]))return send(403,{error:'forbidden'});return readJson(req,(e,j)=>{if(e)return send(400,{error:'invalid_json'});try{return send(200,store.sync(sm[1],j.cursor,j.ops));}catch(x){return send(409,{error:x.message||'sync_conflict'});}});}
+  const pm=u.pathname.match(/^\/v1\/profiles\/([^/]+)\/progress\/([^/]+)$/); if(pm){if(!auth)return send(401,{error:'unauthorized'});if(!canAccessProfile(auth,pm[1]))return send(403,{error:'forbidden'});if(req.method==='GET'){const p=store.getProgress(pm[1],pm[2]);return p?send(200,p):send(404,{error:'not_found'});}if(req.method==='PUT')return readJson(req,(e,j)=>{if(e)return send(400,{error:'invalid_json'});try{send(200,store.putProgress(pm[1],pm[2],j));}catch(x){send(400,{error:x.message});}});}
+  const mm=u.pathname.match(/^\/v1\/media\/([^/]+)$/); if(req.method==='GET'&&mm){if(!auth)return send(401,{error:'unauthorized'});const d=store.mediaDescriptor(mm[1],process.env.LUME_MEDIA_SECRET||'dev');return d?send(200,d):send(404,{error:'media_not_found'});}
+  send(404,{error:'not_found'});
+}
+if(require.main===module){
+  try{assertRuntimeConfig(process.env);}catch(e){
+    safeLog('startup_rejected',{reason:e.message});
+    process.exit(78);
+  }
+  const server=http.createServer(handler);
+  server.listen(process.env.PORT||8787);
+  const shutdown=()=>{
+    server.close(()=>{
+      try{if(typeof store.close==='function')store.close();}finally{process.exit(0);}
+    });
+  };
+  process.once('SIGTERM',shutdown);
+  process.once('SIGINT',shutdown);
+}
+module.exports={Store,SqliteStore,createStoreFromEnv,store,validateCatalogManifest,validateMediaEntry,validateRuntimeConfig,assertRuntimeConfig,redactForLog,safeLog,handler,authenticate,canAccessProfile,tokenRegistry,signSession,verifySignedSession,hashPassword,AuthStore,allowLoginAttempt};
