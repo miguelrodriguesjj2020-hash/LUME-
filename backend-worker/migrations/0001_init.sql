@@ -1,0 +1,16 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS catalog_meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+INSERT OR IGNORE INTO catalog_meta(key,value) VALUES('revision','0');
+CREATE TABLE IF NOT EXISTS works(id TEXT PRIMARY KEY,canonical_title TEXT NOT NULL,display_title TEXT NOT NULL,type TEXT NOT NULL,published INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL,sections_json TEXT NOT NULL DEFAULT '[]',editorial_sections_json TEXT NOT NULL DEFAULT '[]',tags_json TEXT NOT NULL DEFAULT '[]');
+CREATE TABLE IF NOT EXISTS work_sources(work_id TEXT NOT NULL,source_folder_id TEXT NOT NULL,PRIMARY KEY(work_id,source_folder_id));
+CREATE TABLE IF NOT EXISTS editions(id TEXT PRIMARY KEY,work_id TEXT NOT NULL,language TEXT NOT NULL DEFAULT 'unknown',format TEXT NOT NULL,volume_number REAL,chapter_number REAL,source_file_id TEXT NOT NULL UNIQUE,file_name TEXT NOT NULL,byte_size INTEGER,sha256 TEXT,reading_direction TEXT NOT NULL DEFAULT 'auto',source_revision TEXT,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_editions_work_sort ON editions(work_id,volume_number,chapter_number,file_name);
+CREATE TABLE IF NOT EXISTS profiles(id TEXT PRIMARY KEY,account_id TEXT NOT NULL,name TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS accounts(id TEXT PRIMARY KEY,username TEXT NOT NULL UNIQUE COLLATE NOCASE,password_verifier TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('consumer','admin')),profile_id TEXT NOT NULL,disabled INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_accounts_profile ON accounts(profile_id);
+CREATE TABLE IF NOT EXISTS progress(profile_id TEXT NOT NULL,edition_id TEXT NOT NULL,locator_json TEXT NOT NULL,percent REAL NOT NULL,completed INTEGER NOT NULL DEFAULT 0,client_updated_at TEXT NOT NULL,server_updated_at TEXT NOT NULL,op_id TEXT NOT NULL,PRIMARY KEY(profile_id,edition_id));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_progress_op ON progress(op_id);
+CREATE TABLE IF NOT EXISTS sync_events(seq INTEGER PRIMARY KEY AUTOINCREMENT,profile_id TEXT NOT NULL,entity_type TEXT NOT NULL,entity_id TEXT NOT NULL,payload_json TEXT NOT NULL,server_updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_sync_events_profile_seq ON sync_events(profile_id,seq);
+CREATE TABLE IF NOT EXISTS idempotency(op_id TEXT PRIMARY KEY,response_json TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_idempotency_created ON idempotency(created_at);
