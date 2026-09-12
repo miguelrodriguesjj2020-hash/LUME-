@@ -162,7 +162,7 @@ index 0000000..230a7f0
 +  );
 +}
 diff --git a/flutter/lib/ui/catalog_page.dart b/flutter/lib/ui/catalog_page.dart
-index f495d3f..1d05f85 100644
+index 40706f2..f919b0b 100644
 --- a/flutter/lib/ui/catalog_page.dart
 +++ b/flutter/lib/ui/catalog_page.dart
 @@ -8,6 +8,7 @@ import 'media_updates_page.dart';
@@ -173,7 +173,7 @@ index f495d3f..1d05f85 100644
  
  class CatalogPage extends StatefulWidget {
    final AppServices services;
-@@ -45,8 +46,10 @@ class _CatalogPageState extends State<CatalogPage> {
+@@ -49,8 +50,10 @@ class _CatalogPageState extends State<CatalogPage> {
                    if(value=='network')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>NetworkPreferencesPage(services:widget.services)));
                    if(value=='diagnostics')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>CatalogDiagnosticsPage(services:widget.services)));
                    if(value=='admin')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>AdminCatalogPage(services:widget.services)));
@@ -185,7 +185,7 @@ index f495d3f..1d05f85 100644
                    if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'diagnostics',child:Text('Diagnóstico do catálogo')),
                  ])
 diff --git a/flutter/lib/ui/login_page.dart b/flutter/lib/ui/login_page.dart
-index f7bbef9..0742e11 100644
+index 1b692eb..c66856e 100644
 --- a/flutter/lib/ui/login_page.dart
 +++ b/flutter/lib/ui/login_page.dart
 @@ -1,5 +1,7 @@
@@ -196,7 +196,7 @@ index f7bbef9..0742e11 100644
  
  class LoginPage extends StatefulWidget {
    final LumeApi api;
-@@ -14,47 +16,77 @@ class _LoginPageState extends State<LoginPage>{
+@@ -14,55 +16,85 @@ class _LoginPageState extends State<LoginPage>{
    final pass=TextEditingController();
    bool busy=false;
    String? error;
@@ -266,12 +266,20 @@ index f7bbef9..0742e11 100644
 +                child:Text(localNotice??widget.notice!,textAlign:TextAlign.center),
                ),
                const SizedBox(height:24),
--              TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),
-+              TextField(controller:user,autocorrect:false,textCapitalization:TextCapitalization.none,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário',border:OutlineInputBorder())),
+               Semantics(
+                 label:'Usuário',
+                 textField:true,
+-                child:TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),
++                child:TextField(controller:user,autocorrect:false,textCapitalization:TextCapitalization.none,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário',border:OutlineInputBorder())),
+               ),
                const SizedBox(height:12),
--              TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),
+               Semantics(
+                 label:'Senha',
+                 textField:true,
+-                child:TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),
++                child:TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha',border:OutlineInputBorder())),
+               ),
 -              if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!)),
-+              TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha',border:OutlineInputBorder())),
 +              if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.error))),
                const SizedBox(height:20),
 -              FilledButton(
