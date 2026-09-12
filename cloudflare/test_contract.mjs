@@ -8,6 +8,7 @@ if (!globalThis.atob) globalThis.atob = s => Buffer.from(s, 'base64').toString('
 import { passwordMac, signMedia, signSession, verifyMedia, verifySession } from './src/crypto.js';
 import { shouldAcceptProgress, validateCatalogManifest, validateProgress } from './src/catalog.js';
 import { runtimeReady } from './src/worker.js';
+import { driveMediaMode } from './src/drive.js';
 
 const SECRET = 'x'.repeat(48);
 
@@ -47,7 +48,15 @@ test('progress anti-regression semantics match reference backend', () => {
   assert.doesNotThrow(() => validateProgress('e1', { opId: 'o1', clientUpdatedAt: 1, completed: false, percent: .2, locator: { page: 2 } }));
 });
 
-test('production readiness fails closed', () => {
+test('production readiness fails closed but public Drive needs no service account', () => {
   assert.equal(runtimeReady({}).ok, false);
-  assert.equal(runtimeReady({ DB: {}, AUTH_SECRET: SECRET, MEDIA_SECRET: SECRET, PASSWORD_PEPPER: SECRET, GDRIVE_CLIENT_EMAIL: 'x@y', GDRIVE_PRIVATE_KEY: 'pem' }).ok, true);
+  const env = { DB: {}, AUTH_SECRET: SECRET, MEDIA_SECRET: SECRET, PASSWORD_PEPPER: SECRET };
+  assert.equal(runtimeReady(env).ok, true);
+  assert.equal(runtimeReady(env).mediaMode, 'drive-public');
+  assert.equal(driveMediaMode(env), 'drive-public');
+});
+
+test('Drive API credentials remain an optional preferred media mode', () => {
+  const env = { GDRIVE_CLIENT_EMAIL: 'service@example.test', GDRIVE_PRIVATE_KEY: 'pem' };
+  assert.equal(driveMediaMode(env), 'drive-api');
 });
