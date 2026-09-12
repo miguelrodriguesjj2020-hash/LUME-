@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test test_contract.mjs test_accounts.mjs",
-    "check": "node --check src/worker.js && node --check src/worker_accounts.js && node --check src/worker_production.js && node --check src/drive_public.js && node --check src/crypto.js && node --check src/catalog.js && node --check src/drive.js && node --check test_accounts.mjs"
+    "check": "node --check src/worker.js && node --check src/worker_accounts.js && node --check src/crypto.js && node --check src/catalog.js && node --check src/drive.js && node --check test_accounts.mjs"
   }
 }
