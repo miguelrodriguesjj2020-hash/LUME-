@@ -1,0 +1,40 @@
+name: LUME Cloudflare Backend CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, rc1-cloudflare-backend ]
+    paths:
+      - 'cloudflare/**'
+      - '.github/workflows/cloudflare-backend-ci.yml'
+  pull_request:
+    paths:
+      - 'cloudflare/**'
+      - '.github/workflows/cloudflare-backend-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: cloudflare
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Syntax check
+        run: npm run check
+      - name: Contract tests
+        run: npm test
+      - name: Assert no private material is committed
+        run: |
+          set -euo pipefail
+          if git grep -nE '("private_key"[[:space:]]*:|"client_secret"[[:space:]]*:|^[[:space:]]*(AUTH_SECRET|MEDIA_SECRET|PASSWORD_PEPPER)=.{16,})' -- . ':!README.md'; then
+            echo 'Potential private secret value detected in cloudflare/' >&2
+            exit 70
+          fi

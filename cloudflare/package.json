@@ -1,0 +1,9 @@
+{
+  "name": "lume-cloudflare-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test_contract.mjs",
+    "check": "node --check src/worker.js && node --check src/crypto.js && node --check src/catalog.js && node --check src/drive.js"
+  }
+}
