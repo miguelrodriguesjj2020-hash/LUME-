@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LUME · Administração</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17223b;background:#f5f2e9}*{box-sizing:border-box}body{margin:0}header{padding:22px 24px;background:#17223b;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:16px}header h1{font-size:20px;margin:0;letter-spacing:.08em}.shell{max-width:1120px;margin:0 auto;padding:24px}.card{background:#fff;border:1px solid #ddd7c9;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 4px 16px #17223b0d}.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.grow{flex:1 1 220px}label{font-size:12px;font-weight:700;display:block;margin-bottom:6px}input,select{width:100%;border:1px solid #bbb5aa;border-radius:10px;padding:10px 11px;background:#fff;font:inherit}button{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:#17223b;color:white}.gold{background:#c8a96a;color:#17223b}.danger{background:#8c2f39;color:white}.ghost{background:#eeeae1;color:#17223b}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.status{min-height:22px;font-size:13px;margin:10px 0}.status.ok{color:#23633e}.status.bad{color:#8c2f39}.work{border:1px solid #ded8cb;border-radius:12px;padding:14px;margin:10px 0}.workhead{display:flex;justify-content:space-between;gap:12px;align-items:center}.meta{color:#6c665d;font-size:13px}.edition{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,2fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #eee9df}.hidden{display:none!important}.split{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}@media(max-width:800px){.split{grid-template-columns:1fr}.edition{grid-template-columns:1fr}.workhead{align-items:flex-start;flex-direction:column}}.tag{display:inline-block;padding:3px 8px;border-radius:999px;background:#eeeae1;font-size:12px;margin:2px 4px 2px 0}.muted{color:#6c665d}.right{margin-left:auto}.empty{padding:28px;text-align:center;color:#6c665d}.note{font-size:12px;line-height:1.5;color:#6c665d}</style>
+</head>
+<body>
+<header><h1>LUME · ADMINISTRAÇÃO</h1><span id="who" class="muted"></span></header>
+<main class="shell">
+<section id="loginCard" class="card">
+  <h2>Entrar como administrador</h2>
+  <div class="row"><div class="grow"><label for="user">Usuário</label><input id="user" autocomplete="username"></div><div class="grow"><label for="pass">Senha</label><input id="pass" type="password" autocomplete="current-password"></div><button id="loginBtn" class="primary">Entrar</button></div>
+  <div id="loginStatus" class="status"></div>
+</section>
+<section id="app" class="hidden">
+  <div class="toolbar"><button id="reloadBtn" class="ghost">Recarregar</button><button id="addWorkBtn" class="gold">Adicionar obra</button><button id="saveBtn" class="primary">Publicar alterações</button><button id="logoutBtn" class="ghost right">Sair</button></div>
+  <div id="status" class="status"></div>
+  <div class="split">
+    <section class="card"><div class="row"><div><h2 style="margin:0">Catálogo</h2><div id="revision" class="meta"></div></div><div class="right"><input id="filter" placeholder="Filtrar obras" style="min-width:220px"></div></div><div id="works"></div></section>
+    <aside class="card"><h3>Publicação</h3><p class="note">Cada edição precisa de um <b>sourceFileId</b>. Para leitura/download, informe também uma URL HTTPS em “Mídia”. O painel publica o catálogo com nova revisão e registra os descritores de mídia sem recompilar o APK.</p><div id="summary" class="meta"></div></aside>
+  </div>
+</section>
+<section id="workEditor" class="card hidden">
+  <h2 id="workEditorTitle">Obra</h2>
+  <div class="row"><div class="grow"><label>ID</label><input id="wId"></div><div class="grow"><label>Título</label><input id="wTitle"></div><div style="min-width:160px"><label>Tipo</label><select id="wType"><option value="book">Livro</option><option value="hq">HQ</option><option value="manga">Mangá</option><option value="graphic_novel">Graphic novel</option></select></div></div>
+  <div style="margin-top:12px"><label>Seções editoriais (separadas por vírgula)</label><input id="wSections" placeholder="Grandes Clássicos, Recomendações"></div>
+  <div class="toolbar" style="margin-top:14px"><button id="addEditionBtn" class="gold">Adicionar edição</button></div>
+  <div id="editions"></div>
+  <div class="toolbar" style="margin-top:14px"><button id="workOkBtn" class="primary">Concluir</button><button id="workCancelBtn" class="ghost">Cancelar</button><button id="workDeleteBtn" class="danger right">Excluir obra</button></div>
+</section>
+<section id="editionEditor" class="card hidden">
+  <h2>Edição</h2>
+  <div class="row"><div class="grow"><label>ID da edição</label><input id="eId"></div><div style="min-width:140px"><label>Formato</label><select id="eFormat"><option>pdf</option><option>epub</option><option>cbz</option><option>cbr</option></select></div><div style="min-width:130px"><label>Idioma</label><input id="eLang" placeholder="pt-BR"></div></div>
+  <div class="row" style="margin-top:12px"><div class="grow"><label>sourceFileId</label><input id="eSource"></div><div class="grow"><label>Nome do arquivo</label><input id="eFile"></div></div>
+  <div style="margin-top:12px"><label>URL HTTPS da mídia</label><input id="eUrl" placeholder="https://..."></div>
+  <div class="row" style="margin-top:12px"><div class="grow"><label>Tamanho em bytes (opcional)</label><input id="eSize" inputmode="numeric"></div><div class="grow"><label>ETag (opcional)</label><input id="eEtag"></div><div class="grow"><label>SHA-256 (opcional)</label><input id="eSha"></div></div>
+  <div class="toolbar" style="margin-top:14px"><button id="editionOkBtn" class="primary">Concluir</button><button id="editionCancelBtn" class="ghost">Cancelar</but
