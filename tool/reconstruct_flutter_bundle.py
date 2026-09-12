@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import hashlib, json, re, sys
+import hashlib, json, re, subprocess, sys
 
 ROOT=Path(__file__).resolve().parents[1]
 STAGING=ROOT/'staging'/'flutter-bundle'
@@ -64,4 +64,13 @@ while pos<len(bundle):
 
 if len(written)!=int(manifest['sourceFiles']):
     raise SystemExit(f'source file count mismatch: {len(written)} != {manifest["sourceFiles"]}')
-print(json.dumps({'ok':True,'bundleBytes':len(bundle),'bundleSha256':digest,'files':len(written)},indent=2))
+
+# The source bundle remains immutable and hash-verified above. Small release
+# overlays live as reviewable text patches outside the bundle and are applied
+# only after verification, so CI can prove both provenance and final behavior.
+admin_patch=ROOT/'tool'/'admin_catalog_integration.patch'
+if admin_patch.exists():
+    subprocess.run(['git','apply','--check',str(admin_patch)],cwd=ROOT,check=True)
+    subprocess.run(['git','apply',str(admin_patch)],cwd=ROOT,check=True)
+
+print(json.dumps({'ok':True,'bundleBytes':len(bundle),'bundleSha256':digest,'files':len(written),'releaseOverlays':['admin_catalog_integration.patch'] if admin_patch.exists() else []},indent=2))
