@@ -26,6 +26,17 @@ old_catalog_tail='''            ]),\n          ),\n        ),\n      );\n}\n'''
 new_catalog_tail='''            ]),\n          ),\n        );\n        },\n      );\n}\n'''
 replace_once(catalog,old_catalog_tail,new_catalog_tail)
 
+# Explicit semantic labels for the two authentication fields. Flutter already
+# renders them as editable controls; these wrappers ensure Android accessibility
+# services receive stable names without relying on decoration inference.
+login=ROOT/'flutter'/'lib'/'ui'/'login_page.dart'
+old_user="""              TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),\n"""
+new_user="""              Semantics(\n                label:'Usuário',\n                textField:true,\n                child:TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),\n              ),\n"""
+replace_once(login,old_user,new_user)
+old_pass="""              TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),\n"""
+new_pass="""              Semantics(\n                label:'Senha',\n                textField:true,\n                child:TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),\n              ),\n"""
+replace_once(login,old_pass,new_pass)
+
 build=ANDROID/'app'/'build.gradle.kts'
 replace_once(build,f'namespace = "{OLD}"',f'namespace = "{PACKAGE}"')
 replace_once(build,f'applicationId = "{OLD}"',f'applicationId = "{PACKAGE}"')
@@ -94,4 +105,4 @@ new_activity.write_text(activity)
 if old_activity.resolve()!=new_activity.resolve():
     old_activity.unlink()
 
-print(f'Android scaffold hardened: package={PACKAGE}, label=LUME, icon=LUME, INTERNET=yes, cleartext=false, backup=false, catalog-bootstrap=serialized, release-signing=key.properties-or-QA-debug')
+print(f'Android scaffold hardened: package={PACKAGE}, label=LUME, icon=LUME, INTERNET=yes, cleartext=false, backup=false, catalog-bootstrap=serialized, login-semantics=explicit, release-signing=key.properties-or-QA-debug')
