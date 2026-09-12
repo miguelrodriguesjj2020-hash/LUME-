@@ -14,6 +14,18 @@ def replace_once(path,old,new):
         raise SystemExit(f'{p}: expected exactly one occurrence of {old!r}, found {count}')
     p.write_text(s.replace(old,new,1))
 
+# Freeze the catalog bootstrap race fix that passed the full Android 15
+# student journey. Shelves must not read SQLite before the initial bootstrap
+# refresh finishes; once finished, they render the refreshed DB or the
+# preserved local/offline state if the network refresh failed.
+catalog=ROOT/'flutter'/'lib'/'ui'/'catalog_page.dart'
+old_catalog='''  @override Widget build(BuildContext context) => FutureBuilder<void>(\n        future: initialRefresh,\n        builder: (context, _) => DefaultTabController(\n          length: 3,\n          child: Scaffold(\n'''
+new_catalog='''  @override Widget build(BuildContext context) => FutureBuilder<void>(\n        future: initialRefresh,\n        builder: (context, snapshot) {\n          if (snapshot.connectionState != ConnectionState.done) {\n            return const Scaffold(body: Center(child: CircularProgressIndicator()));\n          }\n          return DefaultTabController(\n          length: 3,\n          child: Scaffold(\n'''
+replace_once(catalog,old_catalog,new_catalog)
+old_catalog_tail='''            ]),\n          ),\n        ),\n      );\n}\n'''
+new_catalog_tail='''            ]),\n          ),\n        );\n        },\n      );\n}\n'''
+replace_once(catalog,old_catalog_tail,new_catalog_tail)
+
 build=ANDROID/'app'/'build.gradle.kts'
 replace_once(build,f'namespace = "{OLD}"',f'namespace = "{PACKAGE}"')
 replace_once(build,f'applicationId = "{OLD}"',f'applicationId = "{PACKAGE}"')
@@ -53,6 +65,17 @@ attrs={
 for attr,value in attrs.items():
     if f'{attr}=' not in s:
         s=s.replace('android:label="LUME"',f'android:label="LUME"\n        {attr}="{value}"',1)
+
+# Replace the generated Flutter launcher icon with a deterministic LUME vector.
+# minSdk is 24, so vector drawables are supported on every target device.
+res=ANDROID/'app'/'src'/'main'/'res'
+drawable=res/'drawable'
+drawable.mkdir(parents=True,exist_ok=True)
+(drawable/'lume_launcher.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp"\n    android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="#17223B" android:pathData="M0,0H108V108H0Z"/>\n    <path android:fillColor="#F7F4EA" android:pathData="M25,22H51C58,22 62,25 64,29C66,25 70,22 77,22H83V82H76C69,82 66,84 64,88C62,84 59,82 52,82H25Z"/>\n    <path android:fillColor="#17223B" android:pathData="M60,30H68V72H82V80H60Z"/>\n    <path android:fillColor="#C8A96A" android:pathData="M62,22H66V87H62Z"/>\n</vector>\n''')
+if 'android:icon="@mipmap/ic_launcher"' in s:
+    s=s.replace('android:icon="@mipmap/ic_launcher"','android:icon="@drawable/lume_launcher"',1)
+elif 'android:icon="@drawable/lume_launcher"' not in s:
+    raise SystemExit('unexpected Android launcher icon declaration')
 manifest.write_text(s)
 
 old_activity=ANDROID/'app'/'src'/'main'/'kotlin'/'com'/'example'/'lume'/'MainActivity.kt'
@@ -71,4 +94,4 @@ new_activity.write_text(activity)
 if old_activity.resolve()!=new_activity.resolve():
     old_activity.unlink()
 
-print(f'Android scaffold hardened: package={PACKAGE}, label=LUME, INTERNET=yes, cleartext=false, backup=false, release-signing=key.properties-or-QA-debug')
+print(f'Android scaffold hardened: package={PACKAGE}, label=LUME, icon=LUME, INTERNET=yes, cleartext=false, backup=false, catalog-bootstrap=serialized, release-signing=key.properties-or-QA-debug')
