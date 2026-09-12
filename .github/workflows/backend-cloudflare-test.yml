@@ -1,0 +1,31 @@
+name: LUME Cloudflare Backend
+
+on:
+  pull_request:
+    paths:
+      - 'backend-worker/**'
+      - '.github/workflows/backend-cloudflare-test.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend-worker/**'
+      - '.github/workflows/backend-cloudflare-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        working-directory: backend-worker
+        run: npm run check
+      - name: Backend regression
+        working-directory: backend-worker
+        run: npm test
