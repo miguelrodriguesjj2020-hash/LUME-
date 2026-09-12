@@ -1,0 +1,139 @@
+name: LUME Production Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      LUME_API_BASE: ${{ secrets.LUME_API_BASE }}
+      LUME_ANDROID_KEYSTORE_B64: ${{ secrets.LUME_ANDROID_KEYSTORE_B64 }}
+      LUME_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.LUME_ANDROID_KEYSTORE_PASSWORD }}
+      LUME_ANDROID_KEY_ALIAS: ${{ secrets.LUME_ANDROID_KEY_ALIAS }}
+      LUME_ANDROID_KEY_PASSWORD: ${{ secrets.LUME_ANDROID_KEY_PASSWORD }}
+      LUME_ADMIN_USERNAME: ${{ secrets.LUME_ADMIN_USERNAME }}
+      LUME_ADMIN_PASSWORD: ${{ secrets.LUME_ADMIN_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Require production configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in LUME_API_BASE LUME_ANDROID_KEYSTORE_B64 LUME_ANDROID_KEYSTORE_PASSWORD LUME_ANDROID_KEY_ALIAS LUME_ANDROID_KEY_PASSWORD LUME_ADMIN_USERNAME LUME_ADMIN_PASSWORD; do
+            test -n "${!name:-}" || { echo "Missing required production secret: $name" >&2; exit 64; }
+          done
+          case "$LUME_API_BASE" in https://*) ;; *) echo 'LUME_API_BASE must use HTTPS' >&2; exit 64;; esac
+          case "$LUME_API_BASE" in *lume.invalid*) echo 'Placeholder API is forbidden in production' >&2; exit 64;; esac
+
+      - name: Verify live backend readiness and catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          READY="$(curl --fail --silent --show-error "$LUME_API_BASE/v1/ready")"
+          python3 -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("ok") is True; assert d.get("durable") is True' "$READY"
+          LOGIN="$(curl --fail --silent --show-error -H 'content-type: application/json' --data "$(python3 -c 'import json,os; print(json.dumps({"username":os.environ["LUME_ADMIN_USERNAME"],"password":os.environ["LUME_ADMIN_PASSWORD"]}))')" "$LUME_API_BASE/v1/auth/login")"
+          TOKEN="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["token"])' "$LOGIN")"
+          BOOTSTRAP="$(curl --fail --silent --show-error -H "authorization: Bearer $TOKEN" "$LUME_API_BASE/v1/bootstrap")"
+          python3 -c 'import json,sys; d=json.loads(sys.argv[1]); works=d.get("works") or []; assert len(works)>0, "production catalog is empty"' "$BOOTSTRAP"
+          USERS="$(curl --fail --silent --show-error -H "authorization: Bearer $TOKEN" "$LUME_API_BASE/v1/admin/users")"
+          python3 -c 'import json,sys; d=json.loads(sys.argv[1]); assert d.get("maxUsers")==91; assert any(u.get("role")=="admin" and u.get("active") for u in d.get("users",[]))' "$USERS"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+
+      - name: Reconstruct Flutter source
+        run: python tool/reconstruct_flutter_bundle.py
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: '3.47.3'
+          channel: stable
+          cache: true
+
+      - name: Generate and harden Android scaffold
+        working-directory: flutter
+        run: |
+          flutter create --platforms=android --project-name=lume .
+          cd ..
+          python tool/harden_android_scaffold.py
+
+      - name: Install production signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$LUME_ANDROID_KEYSTORE_B64" | base64 --decode > flutter/android/app/lume-release.jks
+          chmod 600 flutter/android/app/lume-release.jks
+          cat > flutter/android/key.properties <<EOF
+          storePassword=$LUME_ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$LUME_ANDROID_KEY_PASSWORD
+          keyAlias=$LUME_ANDROID_KEY_ALIAS
+          storeFile=lume-release.jks
+          EOF
+
+      - name: Apply audited app overlays
+        run: |
+          set -euo pipefail
+          git apply --check tool/flutter_build_fixes.patch
+          git apply tool/flutter_build_fixes.patch
+          git apply --check tool/account_management_integration.patch
+          git apply tool/account_management_integration.patch
+          rm -f flutter/test/widget_test.dart flutter/analysis_options.yaml
+          cp tool/build_tests/*.dart flutter/test/
+
+      - name: Analyze and test
+        working-directory: flutter
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter analyze --fatal-infos
+          flutter test
+
+      - name: Build signed production APK
+        working-directory: flutter
+        run: |
+          set -euo pipefail
+          flutter build apk --release --dart-define=LUME_API_BASE="$LUME_API_BASE"
+          sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app/outputs/flutter-apk/app-release.apk.sha256
+
+      - name: Production acceptance audit
+        working-directory: flutter
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          mkdir -p build/production-audit
+          AUDIT=build/production-audit
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -1)"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          "$AAPT" dump badging "$APK" | tee "$AUDIT/aapt-badging.txt"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$AUDIT/apksigner.txt"
+          grep -q "package: name='br.com.lume.bibliotecaestudantil'" "$AUDIT/aapt-badging.txt"
+          grep -q "versionCode='38'" "$AUDIT/aapt-badging.txt"
+          grep -q "versionName='0.35.3'" "$AUDIT/aapt-badging.txt"
+          ! grep -q '^application-debuggable' "$AUDIT/aapt-badging.txt"
+          ! grep -q 'CN=Android Debug' "$AUDIT/apksigner.txt"
+          CERT_SHA="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p; s/^V2 Signer: certificate SHA-256 digest: //p' "$AUDIT/apksigner.txt" | head -1 | tr '[:upper:]' '[:lower:]' | tr -d ':')"
+          test "$CERT_SHA" = '687a66adb65e0963e7d4876ea257b48d737aeb568fbd746fc10acc09990bc5c0'
+          unzip -p "$APK" lib/arm64-v8a/libapp.so > "$AUDIT/libapp-arm64.so"
+          ! strings "$AUDIT/libapp-arm64.so" | grep -q 'https://lume.invalid'
+          rm "$AUDIT/libapp-arm64.so"
+          unzip -t "$APK" > "$AUDIT/apk-zip-integrity.txt"
+          echo 'APK_CLASSIFICATION=production-accepted' | tee "$AUDIT/apk-classification.txt"
+
+      - name: Upload final production APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: LUME-0.35.3-build38-PRODUCTION
+          path: |
+            flutter/build/app/outputs/flutter-apk/app-release.apk
+            flutter/build/app/outputs/flutter-apk/app-release.apk.sha256
+            flutter/build/production-audit/*
+          if-no-files-found: error
+          retention-days: 30
