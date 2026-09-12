@@ -1,0 +1,100 @@
+    const DatabaseSync=getDatabaseSync();
+    const verify=new DatabaseSync(dest,{readOnly:true});
+    try{
+      const check=verify.prepare('PRAGMA quick_check').get();
+      if(!check||check.quick_check!=='ok')throw new Error('backup integrity check failed');
+    }finally{verify.close();}
+    return dest;
+  }
+
+  exportSnapshot(){
+    return {
+      schemaVersion:1,
+      revision:this.revision,
+      works:structuredClone(this.works),
+      tombstones:structuredClone(this.tombstones),
+      progress:[...this.progress.entries()].map(([key,value])=>({key,value:structuredClone(value)})),
+      events:structuredClone(this.events),
+      ops:[...this.ops.entries()].map(([key,value])=>({key,value:{...value}})),
+      media:[...this.media.entries()].map(([edition,value])=>({edition,value:{...value}})),
+    };
+  }
+
+  close(){this.db.close();}
+}
+
+
+
+function hashPassword(password,salt){return crypto.scryptSync(password,salt,32).toString('hex');}
+class AuthStore {
+  constructor(users=[]){this.users=new Map(users.map(u=>[u.username,{...u}]));}
+  verify(username,password){const u=this.users.get(username);if(!u)return null;const got=Buffer.from(hashPassword(password,u.salt),'hex');const exp=Buffer.from(u.passwordHash,'hex');if(got.length!==exp.length||!crypto.timingSafeEqual(got,exp))return null;return {role:u.role,profileId:u.profileId};}
+  static fromEnv(env=process.env){try{const users=JSON.parse(env.LUME_USERS_JSON||'[]');return new AuthStore(Array.isArray(users)?users:[]);}catch{return new AuthStore();}}
+}
+const loginAttempts=new Map();
+function allowLoginAttempt(key,now=Date.now()){const x=loginAttempts.get(key)||{start:now,count:0};if(now-x.start>60000){x.start=now;x.count=0;}x.count++;loginAttempts.set(key,x);return x.count<=10;}
+
+function b64url(input){return Buffer.from(input).toString('base64url');}
+function signSession(payload,secret){
+  const body=b64url(JSON.stringify(payload));
+  const sig=crypto.createHmac('sha256',secret).update(body).digest('base64url');
+  return `${body}.${sig}`;
+}
+function verifySignedSession(token,secret,now=Date.now()){
+  if(!token||!secret)return null; const parts=token.split('.'); if(parts.length!==2)return null;
+  const [body,sig]=parts; const expected=crypto.createHmac('sha256',secret).update(body).digest('base64url');
+  const a=Buffer.from(sig), b=Buffer.from(expected); if(a.length!==b.length||!crypto.timingSafeEqual(a,b))return null;
+  try{const p=JSON.parse(Buffer.from(body,'base64url').toString('utf8')); if(!p.sub||!['consumer','admin'].includes(p.role))return null; if(p.exp&&Number(p.exp)<=now)return null; return {role:p.role,profileId:p.sub};}catch{return null;}
+}
+
+function tokenRegistry(env=process.env){
+  const m=new Map();
+  if(env.LUME_CONSUMER_TOKEN)m.set(env.LUME_CONSUMER_TOKEN,{role:'consumer',profileId:env.LUME_CONSUMER_PROFILE||'default'});
+  if(env.LUME_ADMIN_TOKEN)m.set(env.LUME_ADMIN_TOKEN,{role:'admin',profileId:env.LUME_ADMIN_PROFILE||'admin'});
+  return m;
+}
+function authenticate(req, env=process.env){
+  const h=req.headers.authorization||''; const m=/^Bearer\s+(.+)$/.exec(h); if(!m)return null;
+  const token=m[1];
+  const signed=verifySignedSession(token,env.LUME_AUTH_SECRET); if(signed)return signed;
+  return tokenRegistry(env).get(token)||null;
+}
+
+function canAccessProfile(auth,profile){return !!auth&&(auth.role==='admin'||auth.profileId===profile);}
+
+function createStoreFromEnv(env=process.env){
+  const dbPath=env.LUME_DB_PATH;
+  return dbPath ? new SqliteStore(dbPath) : new Store();
+}
+const store=createStoreFromEnv();
+function readJson(req,cb){let b='';req.on('data',c=>{b+=c;if(b.length>1_000_000)req.destroy();});req.on('end',()=>{try{cb(null,JSON.parse(b||'{}'));}catch(e){cb(e);}});}
+function handler(req,res){
+  const u=new URL(req.url,'http://x'); const send=(n,o)=>{res.writeHead(n,{'content-type':'application/json','cache-control':'no-store'});res.end(o===undefined?'':JSON.stringify(o));};
+  const auth=authenticate(req);
+  if(req.method==='GET'&&u.pathname==='/admin'){
+    try{
+      const html=fs.readFileSync(path.join(__dirname,'admin.html'),'utf8');
+      res.writeHead(200,{
+        'content-type':'text/html; charset=utf-8',
+        'cache-control':'no-store',
+        'content-security-policy':"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+        'x-content-type-options':'nosniff',
+        'referrer-policy':'no-referrer'
+      });
+      return res.end(html);
+    }catch{return send(404,{error:'admin_ui_not_found'});}
+  }
+  if(req.method==='POST'&&u.pathname==='/v1/auth/login'){const key=`${req.socket.remoteAddress||'unknown'}`;if(!allowLoginAttempt(key))return send(429,{error:'too_many_attempts'});return readJson(req,(e,j)=>{if(e)return send(400,{error:'invalid_json'});const user=AuthStore.fromEnv().verify(String(j.username||''),String(j.password||''));if(!user)return send(401,{error:'invalid_credentials'});const exp=Date.now()+8*60*60*1000;const token=signSession({sub:user.profileId,role:user.role,exp},process.env.LUME_AUTH_SECRET||'');if(!process.env.LUME_AUTH_SECRET)return send(503,{error:'auth_not_configured'});send(200,{token,profileId:user.profileId,role:user.role,expiresAt:exp});});}
+  if(req.method==='GET'&&u.pathname==='/v1/health')return send(200,{ok:true,service:'lume',protocol:1});
+  if(req.method==='GET'&&u.pathname==='/v1/ready'){
+    const config=validateRuntimeConfig(process.env);
+    const state=typeof store.readiness==='function'?store.readiness():{ok:true,durable:false,revision:store.revision};
+    const ok=config.ok&&state.ok&&(!config.production||state.durable);
+    return send(ok?200:503,{
+      ok,service:'lume',protocol:1,
+      durable:state.durable,
+      revision:state.revision,
+      configOk:config.ok
+    });
+  }
+  if(req.method==='GET'&&u.pathname==='/v1/bootstrap'){if(!auth)return send(401,{error:'unauthorized'});const x=store.bootstrap(u.searchParams
