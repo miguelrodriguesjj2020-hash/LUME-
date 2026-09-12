@@ -1,0 +1,20 @@
+{
+  "catalog": {
+    "revision": 2,
+    "works": [
+      {
+        "id": "solanin",
+        "type": "manga",
+        "displayTitle": "Solanin",
+        "sections": ["Grandes Clássicos", "Essenciais"],
+        "editions": [
+          {"id":"solanin-ptbr","format":"pdf","language":"pt-BR","sourceFileId":"1gDiQjHKZe6ESQb5n-2i0tXsss58EEh2Y","fileName":"Solanin PT-BR.pdf"}
+        ]
+      }
+    ],
+    "tombstones": []
+  },
+  "media": [
+    {"editionId":"solanin-ptbr","url":"https://REPLACE_WITH_PRODUCTION_MEDIA_URL/solanin-ptbr.pdf"}
+  ]
+}
