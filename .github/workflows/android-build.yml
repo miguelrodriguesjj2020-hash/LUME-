@@ -67,11 +67,13 @@ jobs:
             echo 'SIGNING_INPUT=qa-debug-fallback' > flutter/build/qa/signing-input.txt
           fi
 
-      - name: Apply audited build fixes
+      - name: Apply audited build fixes and account flow
         run: |
           set -euo pipefail
           git apply --check tool/flutter_build_fixes.patch
           git apply tool/flutter_build_fixes.patch
+          git apply --check tool/account_management_integration.patch
+          git apply tool/account_management_integration.patch
           if [ -f flutter/test/widget_test.dart ]; then
             grep -q 'MyApp' flutter/test/widget_test.dart
             rm flutter/test/widget_test.dart

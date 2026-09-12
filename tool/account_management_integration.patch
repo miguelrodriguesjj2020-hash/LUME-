@@ -1,0 +1,392 @@
+diff --git a/flutter/lib/services/api.dart b/flutter/lib/services/api.dart
+index 27e9aa2..c0d0d1a 100644
+--- a/flutter/lib/services/api.dart
++++ b/flutter/lib/services/api.dart
+@@ -105,6 +105,42 @@ class LumeApi {
+     return j;
+   }
+ 
++  Future<Map<String,dynamic>> register({
++    required String fullName,
++    required String username,
++    required String password,
++    required String className,
++  }) async {
++    final r=await client.post(
++      _u('/v1/auth/register'),
++      headers:{'content-type':'application/json'},
++      body:jsonEncode({
++        'fullName':fullName,
++        'username':username,
++        'password':password,
++        'className':className,
++      }),
++    );
++    if(r.statusCode!=201)throw _apiError('register',r);
++    return Map<String,dynamic>.from(jsonDecode(r.body));
++  }
++
++  Future<Map<String,dynamic>> adminUsers() async {
++    final r=await _guarded('adminUsers',()=>client.get(_u('/v1/admin/users'),headers:_headers()));
++    if(r.statusCode!=200)throw _apiError('adminUsers',r);
++    return Map<String,dynamic>.from(jsonDecode(r.body));
++  }
++
++  Future<Map<String,dynamic>> setUserActive(String username,bool active) async {
++    final r=await _guarded('adminUserStatus',()=>client.patch(
++      _u('/v1/admin/users/${Uri.encodeComponent(username)}'),
++      headers:_headers({'content-type':'application/json'}),
++      body:jsonEncode({'active':active}),
++    ));
++    if(r.statusCode!=200)throw _apiError('adminUserStatus',r);
++    return Map<String,dynamic>.from(jsonDecode(r.body));
++  }
++
+   Future<void> logout() async {
+     final profile=session.profileId;
+     session.clear();
+diff --git a/flutter/lib/ui/admin_users_page.dart b/flutter/lib/ui/admin_users_page.dart
+new file mode 100644
+index 0000000..230a7f0
+--- /dev/null
++++ b/flutter/lib/ui/admin_users_page.dart
+@@ -0,0 +1,110 @@
++import 'dart:convert';
++import 'package:flutter/material.dart';
++import '../services/api.dart';
++import '../services/app_services.dart';
++
++class AdminUsersPage extends StatefulWidget{
++  final AppServices services;
++  const AdminUsersPage({super.key,required this.services});
++  @override State<AdminUsersPage> createState()=>_AdminUsersPageState();
++}
++
++class _AdminUsersPageState extends State<AdminUsersPage>{
++  bool loading=true;
++  String? error;
++  int activeCount=0;
++  int maxUsers=91;
++  List<Map<String,dynamic>> users=[];
++  final changing=<String>{};
++
++  @override void initState(){super.initState();_load();}
++
++  String _message(Object e){
++    if(e is ApiException){
++      try{
++        final j=jsonDecode(e.body??'');
++        if(j is Map && j['error']=='user_limit_reached')return 'Número máximo de usuários atingido, busque contato com um membro do grêmio para entender.';
++      }catch(_){ }
++    }
++    return 'Não foi possível atualizar este usuário.';
++  }
++
++  Future<void> _load() async{
++    try{
++      final j=await widget.services.api.adminUsers();
++      users=(j['users'] as List? ?? const[]).map((x)=>Map<String,dynamic>.from(x as Map)).toList();
++      activeCount=(j['activeCount'] as num?)?.toInt()??0;
++      maxUsers=(j['maxUsers'] as num?)?.toInt()??91;
++      error=null;
++    }catch(e){error='$e';}
++    if(mounted)setState(()=>loading=false);
++  }
++
++  Future<void> _toggle(Map<String,dynamic> u,bool active)async{
++    final username='${u['username']??''}';
++    if(username.isEmpty||changing.contains(username))return;
++    if(!active){
++      final ok=await showDialog<bool>(context:context,builder:(context)=>AlertDialog(
++        title:const Text('Desligar usuário?'),
++        content:Text('${u['fullName']??username} deixará de conseguir entrar no LUME e perderá a vaga ativa. Os dados de leitura permanecem guardados.'),
++        actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('Cancelar')),FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('Desligar'))],
++      ));
++      if(ok!=true)return;
++    }
++    setState(()=>changing.add(username));
++    try{
++      await widget.services.api.setUserActive(username,active);
++      await _load();
++      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(active?'Usuário reativado.':'Usuário desligado. Uma vaga foi liberada.')));
++    }catch(e){
++      if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(_message(e))));
++    }finally{
++      if(mounted)setState(()=>changing.remove(username));
++    }
++  }
++
++  String _lastAccess(dynamic value){
++    final ms=value is num?value.toInt():int.tryParse('$value');
++    if(ms==null||ms<=0)return 'Nunca entrou';
++    final d=DateTime.fromMillisecondsSinceEpoch(ms).toLocal();
++    String two(int n)=>n.toString().padLeft(2,'0');
++    return 'Último acesso ${two(d.day)}/${two(d.month)} ${two(d.hour)}:${two(d.minute)}';
++  }
++
++  @override Widget build(BuildContext context)=>Scaffold(
++    appBar:AppBar(title:const Text('Usuários'),actions:[IconButton(onPressed:loading?null:(){setState(()=>loading=true);_load();},tooltip:'Atualizar',icon:const Icon(Icons.refresh))]),
++    body:loading?const Center(child:CircularProgressIndicator()):error!=null?Center(child:Padding(padding:const EdgeInsets.all(24),child:Text('Erro ao carregar usuários: $error'))):RefreshIndicator(
++      onRefresh:_load,
++      child:ListView(
++        physics:const AlwaysScrollableScrollPhysics(),
++        children:[
++          Padding(
++            padding:const EdgeInsets.all(16),
++            child:Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
++              Text('$activeCount de $maxUsers perfis ativos',style:Theme.of(context).textTheme.titleMedium),
++              const SizedBox(height:6),
++              Text('${maxUsers-activeCount} ${maxUsers-activeCount==1?'vaga disponível':'vagas disponíveis'}'),
++            ]))),
++          ),
++          if(users.isEmpty)const Padding(padding:EdgeInsets.all(24),child:Center(child:Text('Nenhum usuário cadastrado.'))),
++          for(final u in users)Builder(builder:(context){
++            final username='${u['username']??''}';
++            final active=u['active']==true||u['active']==1;
++            final admin=u['role']=='admin';
++            final sessionActive=u['sessionActive']==true;
++            return ListTile(
++              leading:CircleAvatar(child:Icon(admin?Icons.admin_panel_settings:Icons.person_outline)),
++              title:Text('${u['fullName']??username}'),
++              subtitle:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
++                Text('@$username · ${u['className']??(admin?'Administração':'Turma não informada')}'),
++                Text('${active?'Ativo':'Desligado'} · ${sessionActive?'Sessão ativa':'Sem sessão ativa'} · ${_lastAccess(u['lastLoginAt'])}'),
++              ]),
++              isThreeLine:true,
++              trailing:admin?const Tooltip(message:'A conta administrativa não pode ser desligada',child:Icon(Icons.lock_outline)):changing.contains(username)?const SizedBox(width:24,height:24,child:CircularProgressIndicator(strokeWidth:2)):Switch.adaptive(value:active,onChanged:(v)=>_toggle(u,v)),
++            );
++          }),
++        ],
++      ),
++    ),
++  );
++}
+diff --git a/flutter/lib/ui/catalog_page.dart b/flutter/lib/ui/catalog_page.dart
+index f495d3f..1d05f85 100644
+--- a/flutter/lib/ui/catalog_page.dart
++++ b/flutter/lib/ui/catalog_page.dart
+@@ -8,6 +8,7 @@ import 'media_updates_page.dart';
+ import 'network_preferences_page.dart';
+ import 'catalog_diagnostics_page.dart';
+ import 'admin_catalog_page.dart';
++import 'admin_users_page.dart';
+ 
+ class CatalogPage extends StatefulWidget {
+   final AppServices services;
+@@ -45,8 +46,10 @@ class _CatalogPageState extends State<CatalogPage> {
+                   if(value=='network')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>NetworkPreferencesPage(services:widget.services)));
+                   if(value=='diagnostics')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>CatalogDiagnosticsPage(services:widget.services)));
+                   if(value=='admin')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>AdminCatalogPage(services:widget.services)));
++                  if(value=='users')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>AdminUsersPage(services:widget.services)));
+                 },itemBuilder:(_)=>[
+                   const PopupMenuItem(value:'network',child:Text('Uso de dados')),
++                  if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'users',child:Text('Usuários e turmas')),
+                   if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'admin',child:Text('Gerenciar catálogo')),
+                   if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'diagnostics',child:Text('Diagnóstico do catálogo')),
+                 ])
+diff --git a/flutter/lib/ui/login_page.dart b/flutter/lib/ui/login_page.dart
+index f7bbef9..0742e11 100644
+--- a/flutter/lib/ui/login_page.dart
++++ b/flutter/lib/ui/login_page.dart
+@@ -1,5 +1,7 @@
++import 'dart:convert';
+ import 'package:flutter/material.dart';
+ import '../services/api.dart';
++import 'signup_page.dart';
+ 
+ class LoginPage extends StatefulWidget {
+   final LumeApi api;
+@@ -14,47 +16,77 @@ class _LoginPageState extends State<LoginPage>{
+   final pass=TextEditingController();
+   bool busy=false;
+   String? error;
++  String? localNotice;
+ 
+   @override void dispose(){user.dispose();pass.dispose();super.dispose();}
+ 
++  String _loginError(Object e){
++    if(e is ApiException){
++      try{
++        final j=jsonDecode(e.body??'');
++        if(j is Map && j['error']=='account_disabled')return 'Esta conta foi desligada pelo administrador.';
++      }catch(_){ }
++    }
++    return 'Não foi possível entrar. Verifique suas credenciais.';
++  }
++
+   Future<void> submit() async{
+     if(busy)return;
+-    setState((){busy=true;error=null;});
++    setState((){busy=true;error=null;localNotice=null;});
+     try{
+       await widget.api.login(user.text.trim(),pass.text);
+       pass.clear();
+       await widget.onAuthenticated();
+-    }catch(_){
+-      if(mounted)setState(()=>error='Não foi possível entrar. Verifique suas credenciais.');
++    }catch(e){
++      if(mounted)setState(()=>error=_loginError(e));
+     }finally{
+       if(mounted)setState(()=>busy=false);
+     }
+   }
+ 
++  Future<void> createAccount() async{
++    if(busy)return;
++    final created=await Navigator.of(context).push<String>(MaterialPageRoute(builder:(_)=>SignupPage(api:widget.api)));
++    if(created==null||!mounted)return;
++    user.text=created;
++    pass.clear();
++    setState((){
++      error=null;
++      localNotice='Conta criada. Entre com seu usuário e senha.';
++    });
++  }
++
+   @override Widget build(BuildContext context)=>Scaffold(
+     body:Center(
+-      child:ConstrainedBox(
+-        constraints:const BoxConstraints(maxWidth:420),
+-        child:Padding(
+-          padding:const EdgeInsets.all(24),
++      child:SingleChildScrollView(
++        padding:const EdgeInsets.all(24),
++        child:ConstrainedBox(
++          constraints:const BoxConstraints(maxWidth:420),
+           child:Column(
+             mainAxisSize:MainAxisSize.min,
+             children:[
+               const Text('LUME',style:TextStyle(fontSize:32,fontWeight:FontWeight.bold)),
+-              if(widget.notice!=null)Padding(
++              const SizedBox(height:8),
++              Text('Sua biblioteca estudantil',style:Theme.of(context).textTheme.bodyLarge),
++              if(widget.notice!=null||localNotice!=null)Padding(
+                 padding:const EdgeInsets.only(top:16),
+-                child:Text(widget.notice!,textAlign:TextAlign.center),
++                child:Text(localNotice??widget.notice!,textAlign:TextAlign.center),
+               ),
+               const SizedBox(height:24),
+-              TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),
++              TextField(controller:user,autocorrect:false,textCapitalization:TextCapitalization.none,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário',border:OutlineInputBorder())),
+               const SizedBox(height:12),
+-              TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),
+-              if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!)),
++              TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha',border:OutlineInputBorder())),
++              if(error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Text(error!,textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.error))),
+               const SizedBox(height:20),
+-              FilledButton(
++              SizedBox(width:double.infinity,child:FilledButton(
+                 onPressed:busy?null:submit,
+                 child:busy?const SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2)):const Text('Entrar'),
+-              ),
++              )),
++              const SizedBox(height:10),
++              SizedBox(width:double.infinity,child:OutlinedButton(
++                onPressed:busy?null:createAccount,
++                child:const Text('Criar conta'),
++              )),
+             ],
+           ),
+         ),
+diff --git a/flutter/lib/ui/signup_page.dart b/flutter/lib/ui/signup_page.dart
+new file mode 100644
+index 0000000..9599940
+--- /dev/null
++++ b/flutter/lib/ui/signup_page.dart
+@@ -0,0 +1,96 @@
++import 'dart:convert';
++import 'package:flutter/material.dart';
++import '../services/api.dart';
++
++class SignupPage extends StatefulWidget {
++  final LumeApi api;
++  const SignupPage({super.key,required this.api});
++  @override State<SignupPage> createState()=>_SignupPageState();
++}
++
++class _SignupPageState extends State<SignupPage>{
++  final name=TextEditingController();
++  final user=TextEditingController();
++  final pass=TextEditingController();
++  final className=TextEditingController();
++  bool busy=false;
++  bool hidePassword=true;
++  String? error;
++
++  @override void dispose(){name.dispose();user.dispose();pass.dispose();className.dispose();super.dispose();}
++
++  String? _validate(){
++    if(name.text.trim().length<2)return 'Informe seu nome verdadeiro.';
++    final u=user.text.trim().toLowerCase();
++    if(!RegExp(r'^[a-z0-9._-]{3,24}$').hasMatch(u))return 'O usuário deve ter de 3 a 24 caracteres: letras, números, ponto, _ ou -.';
++    if(pass.text.length<8)return 'A senha precisa ter pelo menos 8 caracteres.';
++    if(className.text.trim().isEmpty)return 'Informe sua turma.';
++    return null;
++  }
++
++  String _serverError(Object e){
++    if(e is ApiException){
++      try{
++        final j=jsonDecode(e.body??'');
++        if(j is Map){
++          switch(j['error']){
++            case 'user_limit_reached':
++              return 'Número máximo de usuários atingido, busque contato com um membro do grêmio para entender.';
++            case 'username_taken':
++              return 'Este usuário já existe. Escolha outro nome de usuário.';
++            case 'invalid_registration':
++              return '${j['message']??'Confira os dados informados.'}';
++          }
++        }
++      }catch(_){ }
++    }
++    return 'Não foi possível criar a conta agora. Tente novamente.';
++  }
++
++  Future<void> submit() async{
++    if(busy)return;
++    final localError=_validate();
++    if(localError!=null){setState(()=>error=localError);return;}
++    setState((){busy=true;error=null;});
++    final normalized=user.text.trim().toLowerCase();
++    try{
++      await widget.api.register(
++        fullName:name.text.trim(),
++        username:normalized,
++        password:pass.text,
++        className:className.text.trim(),
++      );
++      if(mounted)Navigator.pop(context,normalized);
++    }catch(e){
++      if(mounted)setState(()=>error=_serverError(e));
++    }finally{
++      if(mounted)setState(()=>busy=false);
++    }
++  }
++
++  @override Widget build(BuildContext context)=>Scaffold(
++    appBar:AppBar(title:const Text('Criar conta')),
++    body:SafeArea(child:SingleChildScrollView(
++      padding:const EdgeInsets.all(24),
++      child:Center(child:ConstrainedBox(
++        constraints:const BoxConstraints(maxWidth:480),
++        child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
++          Text('Seu perfil no LUME',style:Theme.of(context).textTheme.headlineSmall),
++          const SizedBox(height:8),
++          const Text('Preencha apenas os dados abaixo. Nenhum e-mail é necessário.'),
++          const SizedBox(height:24),
++          TextField(controller:name,textCapitalization:TextCapitalization.words,autofillHints:const[AutofillHints.name],decoration:const InputDecoration(labelText:'Nome verdadeiro',border:OutlineInputBorder())),
++          const SizedBox(height:14),
++          TextField(controller:user,autocorrect:false,textCapitalization:TextCapitalization.none,autofillHints:const[AutofillHints.newUsername],decoration:const InputDecoration(labelText:'Usuário',hintText:'ex.: joao.silva',border:OutlineInputBorder())),
++          const SizedBox(height:14),
++          TextField(controller:pass,obscureText:hidePassword,autofillHints:const[AutofillHints.newPassword],decoration:InputDecoration(labelText:'Senha',border:const OutlineInputBorder(),suffixIcon:IconButton(onPressed:()=>setState(()=>hidePassword=!hidePassword),icon:Icon(hidePassword?Icons.visibility_outlined:Icons.visibility_off_outlined)))),
++          const SizedBox(height:14),
++          TextField(controller:className,textCapitalization:TextCapitalization.characters,onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Turma',hintText:'ex.: 2º A',border:OutlineInputBorder())),
++          if(error!=null)Padding(padding:const EdgeInsets.only(top:16),child:Text(error!,textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.error,fontWeight:FontWeight.w600))),
++          const SizedBox(height:24),
++          FilledButton.icon(onPressed:busy?null:submit,icon:busy?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.person_add_alt_1),label:const Text('Criar minha conta')),
++        ]),
++      )),
++    )),
++  );
++}

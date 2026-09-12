@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "lume-api",
-  "main": "src/worker.js",
+  "main": "src/worker_accounts.js",
   "compatibility_date": "2026-09-01",
   "d1_databases": [
     {
