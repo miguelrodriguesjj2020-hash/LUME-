@@ -1,0 +1,117 @@
+const http = require('http');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+let _DatabaseSync;
+function getDatabaseSync(){
+  if(_DatabaseSync)return _DatabaseSync;
+  try{({DatabaseSync:_DatabaseSync}=require('node:sqlite'));return _DatabaseSync;}
+  catch{throw new Error('node:sqlite unavailable');}
+}
+
+
+function _secretStrong(value){
+  return typeof value==='string' && value.length>=32;
+}
+function validateRuntimeConfig(env=process.env){
+  const production=String(env.LUME_ENV||'').toLowerCase()==='production';
+  const issues=[];
+  if(production){
+    if(!env.LUME_DB_PATH)issues.push('LUME_DB_PATH required in production');
+    if(!_secretStrong(env.LUME_AUTH_SECRET))issues.push('LUME_AUTH_SECRET must be at least 32 characters');
+    if(!_secretStrong(env.LUME_MEDIA_SECRET))issues.push('LUME_MEDIA_SECRET must be at least 32 characters');
+    let users=[];
+    try{users=JSON.parse(env.LUME_USERS_JSON||'[]');}catch{issues.push('LUME_USERS_JSON invalid JSON');}
+    if(!Array.isArray(users)||users.length===0)issues.push('LUME_USERS_JSON must contain at least one user');
+    if(env.LUME_CONSUMER_TOKEN||env.LUME_ADMIN_TOKEN)issues.push('static bearer tokens are not allowed in production');
+  }
+  return {ok:issues.length===0,production,issues};
+}
+function assertRuntimeConfig(env=process.env){
+  const result=validateRuntimeConfig(env);
+  if(!result.ok)throw new Error(`invalid runtime configuration: ${result.issues.join('; ')}`);
+  return result;
+}
+function redactForLog(value){
+  if(value==null)return value;
+  if(typeof value==='string'){
+    return value
+      .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+=*/gi,'Bearer [REDACTED]')
+      .replace(/([?&](?:token|access_token|signature|sig)=)[^&\s]+/gi,'$1[REDACTED]');
+  }
+  if(Array.isArray(value))return value.map(redactForLog);
+  if(typeof value==='object'){
+    const out={};
+    for(const [k,v] of Object.entries(value)){
+      if(/^(authorization|token|password|passwordHash|secret|cookie)$/i.test(k))out[k]='[REDACTED]';
+      else out[k]=redactForLog(v);
+    }
+    return out;
+  }
+  return value;
+}
+function safeLog(event,details={}){
+  const record={ts:new Date().toISOString(),event,...redactForLog(details)};
+  process.stdout.write(JSON.stringify(record)+'\n');
+}
+
+function validateCatalogManifest(input){
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('catalog must be an object');
+  if(!Number.isInteger(input.revision)||input.revision<0)throw new Error('invalid revision');
+  if(!Array.isArray(input.works))throw new Error('works must be an array');
+  const workIds=new Set(), editionIds=new Set(), tombstoneKeys=new Set();
+  for(const w of input.works){
+    if(!w||typeof w!=='object'||Array.isArray(w))throw new Error('invalid work');
+    const wid=typeof w.id==='string'?w.id.trim():'';
+    if(!wid)throw new Error('work id missing');
+    if(workIds.has(wid))throw new Error(`duplicate work id: ${wid}`);
+    workIds.add(wid);
+    if(!['book','hq','manga','graphic_novel'].includes(w.type))throw new Error(`invalid work type for ${wid}: ${w.type}`);
+    const title=typeof w.displayTitle==='string'&&w.displayTitle.trim()?w.displayTitle:(typeof w.canonicalTitle==='string'?w.canonicalTitle:'');
+    if(!title.trim())throw new Error(`work title missing for ${wid}`);
+    if(!Array.isArray(w.editions))throw new Error(`editions must be an array for ${wid}`);
+    for(const key of ['sections','editorialSections','tags']){
+      const value=w[key];
+      if(value!==undefined && (!Array.isArray(value)||value.some(x=>typeof x!=='string'||!x.trim()))){
+        throw new Error(`${key} must be a non-empty string array for ${wid}`);
+      }
+    }
+    for(const e of w.editions){
+      if(!e||typeof e!=='object'||Array.isArray(e))throw new Error(`invalid edition in ${wid}`);
+      const eid=typeof e.id==='string'?e.id.trim():'';
+      if(!eid)throw new Error(`edition id missing in ${wid}`);
+      if(editionIds.has(eid))throw new Error(`duplicate edition id: ${eid}`);
+      editionIds.add(eid);
+      if(!['pdf','epub','cbz','cbr'].includes(e.format))throw new Error(`invalid edition format for ${eid}: ${e.format}`);
+      if(typeof e.sourceFileId!=='string'||!e.sourceFileId.trim())throw new Error(`sourceFileId missing for ${eid}`);
+      if(typeof e.fileName!=='string'||!e.fileName.trim())throw new Error(`fileName missing for ${eid}`);
+    }
+  }
+  const tombstones=input.tombstones??[];
+  if(!Array.isArray(tombstones))throw new Error('tombstones must be an array');
+  for(const t of tombstones){
+    if(!t||typeof t!=='object'||Array.isArray(t))throw new Error('invalid tombstone');
+    const id=typeof t.id==='string'?t.id.trim():'';
+    if(!id||!['work','edition'].includes(t.kind))throw new Error('invalid tombstone');
+    const key=`${t.kind}:${id}`;
+    if(tombstoneKeys.has(key))throw new Error(`duplicate tombstone: ${key}`);
+    tombstoneKeys.add(key);
+    if(t.kind==='work'&&workIds.has(id))throw new Error(`work both present and tombstoned: ${id}`);
+    if(t.kind==='edition'&&editionIds.has(id))throw new Error(`edition both present and tombstoned: ${id}`);
+  }
+  return true;
+}
+
+
+function validateMediaEntry(input, env=process.env){
+  if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('media entry must be an object');
+  const editionId=typeof input.editionId==='string'?input.editionId.trim():'';
+  if(!editionId)throw new Error('editionId required');
+  const url=typeof input.url==='string'?input.url.trim():'';
+  if(!url)throw new Error(`media url required for ${editionId}`);
+  let parsed;
+  try{parsed=new URL(url);}catch{throw new Error(`invalid media url for ${editionId}`);}
+  if(!['http:','https:'].includes(parsed.protocol))throw new Error(`unsupported media url protocol for ${editionId}`);
+  if(String(env.LUME_ENV||'').toLowerCase()==='production'&&parsed.protocol!=='https:')throw new Error(`production media url must use HTTPS for ${editionId}`);
+  const byteSize=input.byteSize;
+  if(byteSize!==
