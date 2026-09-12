@@ -1,0 +1,31 @@
+--- a/flutter/lib/readers/cbz_reader_page.dart
++++ b/flutter/lib/readers/cbz_reader_page.dart
+@@ -26,8 +26,27 @@
+     widget.onProgress?.call(PageLocator(index+1,pageCount:widget.pages.length));
+   }
+ 
++  Future<void> _goTo(int index) async {
++    if(index<0 || index>=widget.pages.length || !controller.hasClients)return;
++    await controller.animateToPage(index,duration:const Duration(milliseconds:220),curve:Curves.easeOutCubic);
++  }
++
+   @override Widget build(BuildContext context)=>Scaffold(
+-    appBar:AppBar(title:Text('Página ${pageIndex+1} de ${widget.pages.length}')),
++    appBar:AppBar(
++      title:Text('Página ${pageIndex+1} de ${widget.pages.length}'),
++      actions:[
++        IconButton(
++          tooltip:'Página anterior',
++          onPressed:pageIndex>0?()=>_goTo(pageIndex-1):null,
++          icon:const Icon(Icons.chevron_left_rounded),
++        ),
++        IconButton(
++          tooltip:'Próxima página',
++          onPressed:pageIndex+1<widget.pages.length?()=>_goTo(pageIndex+1):null,
++          icon:const Icon(Icons.chevron_right_rounded),
++        ),
++      ],
++    ),
+     body:PageView.builder(
+       controller:controller,
+       onPageChanged:_changed,
