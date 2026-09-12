@@ -28,7 +28,8 @@ coords_for(){
 import re,sys,xml.etree.ElementTree as ET
 needle=sys.argv[1]; root=ET.parse(sys.argv[2]).getroot()
 for n in root.iter('node'):
-    if n.attrib.get('text')==needle or n.attrib.get('content-desc')==needle:
+    text=n.attrib.get('text',''); desc=n.attrib.get('content-desc','')
+    if text==needle or desc==needle or text.startswith(needle+'\n') or desc.startswith(needle+'\n'):
         m=re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]',n.attrib.get('bounds',''))
         if m:
             x1,y1,x2,y2=map(int,m.groups()); print((x1+x2)//2,(y1+y2)//2); raise SystemExit(0)
@@ -90,8 +91,9 @@ tap_text 'HQ Jornada'
 wait_text 'hq-jornada.cbz'
 tap_text 'hq-jornada.cbz'
 wait_text 'Página 1 de 3' 160
+wait_text 'Próxima página'
 snapshot 'reader-page-1'
-adb shell input swipe 900 1100 150 1100 450
+tap_text 'Próxima página'
 wait_text 'Página 2 de 3' 80
 sleep 2
 snapshot 'reader-page-2'
@@ -124,4 +126,4 @@ snapshot 'offline-reader-progress-restored'
 adb logcat -d -v threadtime > "$QA/logcat.txt"
 if grep -q "ANR in $PKG" "$QA/logcat.txt"; then echo 'ANR detected' >&2; exit 83; fi
 if grep -q 'FATAL EXCEPTION' "$QA/logcat.txt" && grep -q "Process: $PKG" "$QA/logcat.txt"; then echo 'fatal exception detected' >&2; exit 84; fi
-printf '%s\n' 'USER_JOURNEY=pass' 'LOGIN=pass' 'CATALOG=pass' 'CBZ_ONLINE=pass' 'PROCESS_RESTART=pass' 'SECURE_SESSION_RESTORE=pass' 'OFFLINE_CATALOG=pass' 'OFFLINE_CBZ=pass' 'READING_PROGRESS_RESTORE=pass' | tee "$QA/result.txt"
+printf '%s\n' 'USER_JOURNEY=pass' 'LOGIN=pass' 'CATALOG=pass' 'CBZ_ONLINE=pass' 'CBZ_DETERMINISTIC_NAV=pass' 'PROCESS_RESTART=pass' 'SECURE_SESSION_RESTORE=pass' 'OFFLINE_CATALOG=pass' 'OFFLINE_CBZ=pass' 'READING_PROGRESS_RESTORE=pass' | tee "$QA/result.txt"
