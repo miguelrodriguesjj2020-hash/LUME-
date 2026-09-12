@@ -1,0 +1,22 @@
+diff --git a/flutter/lib/ui/catalog_page.dart b/flutter/lib/ui/catalog_page.dart
+--- a/flutter/lib/ui/catalog_page.dart
++++ b/flutter/lib/ui/catalog_page.dart
+@@ -6,6 +6,7 @@
+ import 'media_updates_page.dart';
+ import 'network_preferences_page.dart';
+ import 'catalog_diagnostics_page.dart';
++import 'admin_catalog_page.dart';
+ 
+ class CatalogPage extends StatefulWidget {
+   final AppServices services;
+@@ -38,9 +39,11 @@
+                 PopupMenuButton<String>(onSelected:(value){
+                   if(value=='network')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>NetworkPreferencesPage(services:widget.services)));
+                   if(value=='diagnostics')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>CatalogDiagnosticsPage(services:widget.services)));
++                  if(value=='admin')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>AdminCatalogPage(services:widget.services)));
+                 },itemBuilder:(_)=>[
+                   const PopupMenuItem(value:'network',child:Text('Uso de dados')),
++                  if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'admin',child:Text('Gerenciar catálogo')),
+                   if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'diagnostics',child:Text('Diagnóstico do catálogo')),
+                 ])
+               ],
