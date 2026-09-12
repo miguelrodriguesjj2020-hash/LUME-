@@ -1,7 +1,6 @@
-diff --git a/flutter/lib/ui/catalog_page.dart b/flutter/lib/ui/catalog_page.dart
 --- a/flutter/lib/ui/catalog_page.dart
 +++ b/flutter/lib/ui/catalog_page.dart
-@@ -6,6 +6,7 @@
+@@ -7,6 +7,7 @@
  import 'media_updates_page.dart';
  import 'network_preferences_page.dart';
  import 'catalog_diagnostics_page.dart';
@@ -9,7 +8,7 @@ diff --git a/flutter/lib/ui/catalog_page.dart b/flutter/lib/ui/catalog_page.dart
  
  class CatalogPage extends StatefulWidget {
    final AppServices services;
-@@ -38,9 +39,11 @@
+@@ -43,8 +44,10 @@
                  PopupMenuButton<String>(onSelected:(value){
                    if(value=='network')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>NetworkPreferencesPage(services:widget.services)));
                    if(value=='diagnostics')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>CatalogDiagnosticsPage(services:widget.services)));
