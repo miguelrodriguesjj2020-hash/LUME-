@@ -1,0 +1,12 @@
+{
+  "name":"lume-backend",
+  "version":"0.36.0",
+  "private":true,
+  "engines":{"node":">=24 <25"},
+  "scripts":{
+    "assemble":"node assemble.js",
+    "seed":"node assemble.js && node seed.js",
+    "start":"node assemble.js && node seed.js --optional && node server.runtime.js",
+    "verify-db":"node operations.js verify ${LUME_DB_PATH:-/data/lume.sqlite}"
+  }
+}
