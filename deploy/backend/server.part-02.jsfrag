@@ -1,0 +1,110 @@
+undefined&&byteSize!==null&&(!Number.isInteger(byteSize)||byteSize<0))throw new Error(`invalid byteSize for ${editionId}`);
+  const etag=input.etag;
+  if(etag!==undefined&&etag!==null&&typeof etag!=='string')throw new Error(`invalid etag for ${editionId}`);
+  const sha256=input.sha256;
+  if(sha256!==undefined&&sha256!==null&&(!/^[a-f0-9]{64}$/i.test(String(sha256))))throw new Error(`invalid sha256 for ${editionId}`);
+  return {editionId,url,byteSize:byteSize??undefined,etag:etag??undefined,sha256:sha256??undefined};
+}
+
+class Store {
+  constructor() { this.revision=1; this.works=[]; this.tombstones=[]; this.progress=new Map(); this.events=[]; this.ops=new Map(); this.media=new Map(); }
+  installCatalog(manifest) {
+    validateCatalogManifest(manifest);
+    const {revision,works,tombstones=[]}=manifest;
+    if(revision<this.revision)throw new Error('stale revision');
+    if(revision===this.revision && this.works.length){
+      const same=JSON.stringify({works:this.works,tombstones:this.tombstones})===JSON.stringify({works,tombstones});
+      if(!same)throw new Error('revision reuse with different catalog');
+      return;
+    }
+    this.revision=revision;
+    this.works=structuredClone(works);
+    this.tombstones=structuredClone(tombstones);
+  }
+  registerMedia(id,meta){this.media.set(id,{...meta});}
+  listMedia(){return [...this.media.entries()].map(([edition,value])=>({editionId:edition,...structuredClone(value)}));}
+  removeMedia(id){return this.media.delete(id);}
+  bootstrap(since){return Number(since)===this.revision?null:{revision:this.revision,full:true,works:structuredClone(this.works),tombstones:structuredClone(this.tombstones)};}
+  putProgress(profile,edition,p){
+    if(typeof p?.opId!=='string'||!p.opId.trim())throw new Error('opId required');
+    if(typeof edition!=='string'||!edition.trim())throw new Error('editionId required');
+    if(!Number.isInteger(p.clientUpdatedAt)||p.clientUpdatedAt<0)throw new Error('invalid clientUpdatedAt');
+    if(typeof p.completed!=='boolean')throw new Error('completed must be boolean');
+    if(typeof p.percent!=='number'||!Number.isFinite(p.percent)||p.percent<0||p.percent>1)throw new Error('invalid percent');
+    if(!p.locator||typeof p.locator!=='object'||Array.isArray(p.locator))throw new Error('invalid locator');
+    const opKey=`${profile}:${p.opId}`;
+    const priorOp=this.ops.get(opKey);
+    if(priorOp){
+      if(priorOp.edition!==edition)throw new Error('opId reused for different edition');
+      return {duplicate:true,current:this.progress.get(`${profile}:${edition}`)};
+    }
+    const k=`${profile}:${edition}`; const old=this.progress.get(k); const incoming={...p,profileId:profile,editionId:edition};
+    const accept=!old||(!old.completed&&incoming.completed)||(!old.completed&&!incoming.completed&&incoming.clientUpdatedAt>=old.clientUpdatedAt)||(old.completed&&incoming.completed&&incoming.clientUpdatedAt>=old.clientUpdatedAt);
+    if(accept)this.progress.set(k,incoming);
+    this.ops.set(opKey,{edition});
+    if(accept){
+      const seq=this.events.length+1;
+      this.events.push({seq,profile,edition,payload:structuredClone(this.progress.get(k))});
+      return {duplicate:false,accepted:true,seq,current:this.progress.get(k)};
+    }
+    return {duplicate:false,accepted:false,current:this.progress.get(k)};
+  }
+  getProgress(profile,edition){return this.progress.get(`${profile}:${edition}`)||null;}
+  sync(profile,cursor,ops=[]){
+    const after=Number(cursor||0);
+    if(!Number.isInteger(after)||after<0||after>this.events.length)throw new Error('invalid cursor');
+    const ack=[]; const rejected=[];
+    for(const op of Array.isArray(ops)?ops:[]){
+      if(!op||op.kind!=='progress'){if(op?.opId)rejected.push({opId:op.opId,reason:'unsupported operation'});continue;}
+      try{this.putProgress(profile,op.editionId,op);ack.push(op.opId);}
+      catch(e){if(op?.opId)rejected.push({opId:op.opId,reason:e.message||'invalid operation'});}
+    }
+    const events=this.events.filter(e=>e.profile===profile&&e.seq>after);
+    return {cursor:String(events.length?events.at(-1).seq:after),events:structuredClone(events),ack,rejected};
+  }
+  mediaDescriptor(id,secret='dev'){const meta=this.media.get(id);if(!meta)return null;const expiresAt=Date.now()+300000;const token=crypto.createHmac('sha256',secret).update(`${id}:${expiresAt}`).digest('hex');return {strategy:'signed',editionId:id,expiresAt,token,byteSize:meta.byteSize,etag:meta.etag,sha256:meta.sha256,url:meta.url};}
+  readiness(){return {ok:true,durable:false,revision:this.revision};}
+}
+
+
+class SqliteStore extends Store {
+  constructor(filePath){
+    super();
+    if(typeof filePath!=='string'||!filePath.trim())throw new Error('database path required');
+    this.filePath=path.resolve(filePath);
+    fs.mkdirSync(path.dirname(this.filePath),{recursive:true});
+    const DatabaseSync=getDatabaseSync();
+    this.db=new DatabaseSync(this.filePath);
+    this.db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;');
+    this._schema();
+    const check=this.db.prepare('PRAGMA quick_check').get();
+    if(!check || check.quick_check!=='ok')throw new Error('sqlite integrity check failed');
+    this.db.prepare("INSERT INTO state(k,v) VALUES('schema_version','1') ON CONFLICT(k) DO NOTHING").run();
+    this._load();
+  }
+
+  _schema(){
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS state(
+        k TEXT PRIMARY KEY,
+        v TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS works(
+        id TEXT PRIMARY KEY,
+        ordinal INTEGER NOT NULL,
+        json TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS tombstones(
+        ordinal INTEGER PRIMARY KEY,
+        json TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS progress(
+        profile TEXT NOT NULL,
+        edition TEXT NOT NULL,
+        json TEXT NOT NULL,
+        PRIMARY KEY(profile,edition)
+      );
+      CREATE TABLE IF NOT EXISTS events(
+        seq INTEGER PRIMARY KEY,
+        profile TEXT NOT NULL,
+        
