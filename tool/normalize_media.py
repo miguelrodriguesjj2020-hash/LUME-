@@ -21,6 +21,14 @@ from xml.etree import ElementTree
 
 from PIL import Image, ImageChops, ImageOps, UnidentifiedImageError
 
+try:
+    import pymupdf as _pymupdf
+except ImportError:  # PyMuPDF < 1.24 exposed only the historical ``fitz`` alias.
+    try:
+        import fitz as _pymupdf
+    except ImportError:
+        _pymupdf = None
+
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 ARCHIVE_EXTENSIONS = {".cbz", ".zip", ".cbr", ".rar"}
@@ -204,9 +212,32 @@ def extract_epub_cover(source: Path) -> tuple[bytes,str]:
 
 
 def _pdf_page(source: Path,page: int,scale: int=2400)->bytes:
+    if _pymupdf is not None:
+        try:
+            with _pymupdf.open(source) as document:
+                if page > document.page_count:
+                    raise NormalizationError(
+                        f"cover page {page} exceeds {document.page_count} PDF pages"
+                    )
+                pdf_page = document.load_page(page - 1)
+                longest_edge = max(pdf_page.rect.width, pdf_page.rect.height)
+                zoom = max(1.0, scale / longest_edge)
+                pixmap = pdf_page.get_pixmap(
+                    matrix=_pymupdf.Matrix(zoom, zoom),
+                    colorspace=_pymupdf.csRGB,
+                    alpha=False,
+                )
+                return pixmap.tobytes("jpeg", jpg_quality=90)
+        except NormalizationError:
+            raise
+        except Exception as exc:
+            raise NormalizationError(
+                f"could not render PDF page {page} with PyMuPDF"
+            ) from exc
+
     executable=shutil.which("pdftoppm") or shutil.which("pdftocairo")
     if not executable:
-        raise NormalizationError("pdftoppm or pdftocairo is required")
+        raise NormalizationError("PyMuPDF, pdftoppm or pdftocairo is required")
     with tempfile.TemporaryDirectory(prefix="lume-pdf-") as directory:
         target=Path(directory)/"page"
         process=subprocess.run([executable,"-f",str(page),"-l",str(page),"-singlefile","-jpeg","-scale-to",str(scale),str(source),str(target)],stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=False)

@@ -7,7 +7,10 @@ import unittest
 import zipfile
 from pathlib import Path
 
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 from PIL import Image
 
 from cover_candidates import render_candidates
@@ -76,4 +79,3 @@ class NormalizeMediaTests(unittest.TestCase):
 
 
 if __name__=="__main__":unittest.main()
-

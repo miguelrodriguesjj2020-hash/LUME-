@@ -105,6 +105,42 @@ class LumeApi {
     return j;
   }
 
+  Future<Map<String,dynamic>> register({
+    required String fullName,
+    required String username,
+    required String password,
+    required String className,
+  }) async {
+    final r=await client.post(
+      _u('/v1/auth/register'),
+      headers:{'content-type':'application/json'},
+      body:jsonEncode({
+        'fullName':fullName,
+        'username':username,
+        'password':password,
+        'className':className,
+      }),
+    );
+    if(r.statusCode!=201)throw _apiError('register',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<Map<String,dynamic>> adminUsers() async {
+    final r=await _guarded('adminUsers',()=>client.get(_u('/v1/admin/users'),headers:_headers()));
+    if(r.statusCode!=200)throw _apiError('adminUsers',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<Map<String,dynamic>> setUserActive(String username,bool active) async {
+    final r=await _guarded('adminUserStatus',()=>client.patch(
+      _u('/v1/admin/users/${Uri.encodeComponent(username)}'),
+      headers:_headers({'content-type':'application/json'}),
+      body:jsonEncode({'active':active}),
+    ));
+    if(r.statusCode!=200)throw _apiError('adminUserStatus',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
   Future<void> logout() async {
     final profile=session.profileId;
     session.clear();
@@ -133,6 +169,12 @@ class LumeApi {
   Future<Map<String,dynamic>> media(String id) async {
     final r=await _guarded('media',()=>client.get(_u('/v1/media/$id'),headers:_headers()));
     if(r.statusCode!=200)throw _apiError('media',r);
+    return Map<String,dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<Map<String,dynamic>> cover(String workId) async {
+    final r=await _guarded('cover',()=>client.get(_u('/v1/covers/${Uri.encodeComponent(workId)}'),headers:_headers()));
+    if(r.statusCode!=200)throw _apiError('cover',r);
     return Map<String,dynamic>.from(jsonDecode(r.body));
   }
 

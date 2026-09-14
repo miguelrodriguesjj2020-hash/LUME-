@@ -15,6 +15,7 @@ import 'reading_progress.dart';
 import 'recoverable_downloads.dart';
 import 'network_policy.dart';
 import 'connectivity_adapter.dart';
+import 'cover_cache.dart';
 import 'catalog_diagnostics.dart';
 import 'reconnect_coordinator.dart';
 import 'storage_policy.dart';
@@ -24,6 +25,7 @@ class AppServices {
   final LumeDb db;
   final LumeApi api;
   final MediaCache mediaCache;
+  final CoverCache coverCache;
   final MediaOpenCoordinator mediaOpen;
   final MediaRevalidator mediaRevalidator;
   final MediaReplacementCoordinator mediaReplacement;
@@ -41,6 +43,7 @@ class AppServices {
     required this.db,
     required this.api,
     required this.mediaCache,
+    required this.coverCache,
     required this.mediaOpen,
     required this.mediaRevalidator,
     required this.mediaReplacement,
@@ -83,8 +86,10 @@ class AppServices {
     final app = await getApplicationSupportDirectory();
     final media = Directory('${app.path}/media');
     final prepared = Directory('${app.path}/prepared');
+    final covers = Directory('${app.path}/covers');
     await media.create(recursive: true);
     await prepared.create(recursive: true);
+    await covers.create(recursive: true);
     final api = existingApi ?? LumeApi(apiBase, session: session);
     final resolvedProfileId = profileId ?? api.session.profileId ?? 'local-profile';
     final cache = MediaCache();
@@ -114,6 +119,7 @@ class AppServices {
       db: db,
       api: api,
       mediaCache: cache,
+      coverCache: CoverCache(api:api,directory:covers),
       mediaOpen: opener,
       mediaRevalidator: MediaRevalidator(db,api),
       mediaReplacement: replacement,

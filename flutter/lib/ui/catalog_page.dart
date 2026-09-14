@@ -3,11 +3,14 @@ import '../models/catalog.dart';
 import '../readers/reader_session_page.dart';
 import '../services/app_services.dart';
 import '../services/library_repository.dart';
+import '../services/cover_cache.dart';
 import 'downloads_page.dart';
 import 'media_updates_page.dart';
 import 'network_preferences_page.dart';
 import 'catalog_diagnostics_page.dart';
 import 'admin_catalog_page.dart';
+import 'admin_users_page.dart';
+import 'cover_image.dart';
 
 class CatalogPage extends StatefulWidget {
   final AppServices services;
@@ -45,8 +48,10 @@ class _CatalogPageState extends State<CatalogPage> {
                   if(value=='network')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>NetworkPreferencesPage(services:widget.services)));
                   if(value=='diagnostics')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>CatalogDiagnosticsPage(services:widget.services)));
                   if(value=='admin')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>AdminCatalogPage(services:widget.services)));
+                  if(value=='users')Navigator.of(context).push(MaterialPageRoute(builder:(_)=>AdminUsersPage(services:widget.services)));
                 },itemBuilder:(_)=>[
                   const PopupMenuItem(value:'network',child:Text('Uso de dados')),
+                  if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'users',child:Text('Usuários e turmas')),
                   if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'admin',child:Text('Gerenciar catálogo')),
                   if(widget.services.api.session.role=='admin')const PopupMenuItem(value:'diagnostics',child:Text('Diagnóstico do catálogo')),
                 ])
@@ -54,9 +59,9 @@ class _CatalogPageState extends State<CatalogPage> {
               bottom: const TabBar(tabs: [Tab(text: 'Livros'), Tab(text: 'HQs'), Tab(text: 'Mangás')]),
             ),
             body: TabBarView(children: [
-              _Shelf(loader: repo.books, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
-              _Shelf(loader: repo.comics, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
-              _Shelf(loader: repo.manga, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
+              _Shelf(loader: repo.books, coverCache:widget.services.coverCache, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
+              _Shelf(loader: repo.comics, coverCache:widget.services.coverCache, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
+              _Shelf(loader: repo.manga, coverCache:widget.services.coverCache, onOpen: (e) => _openEdition(context, e), onDownload:(e)=>widget.services.offlineDownloads.enqueueEdition(e.id,pinned:true)),
             ]),
           ),
         ),
@@ -65,9 +70,10 @@ class _CatalogPageState extends State<CatalogPage> {
 
 class _Shelf extends StatefulWidget {
   final Future<List<Work>> Function() loader;
+  final CoverCache coverCache;
   final ValueChanged<Edition> onOpen;
   final Future<void> Function(Edition) onDownload;
-  const _Shelf({required this.loader, required this.onOpen, required this.onDownload});
+  const _Shelf({required this.loader,required this.coverCache,required this.onOpen,required this.onDownload});
   @override State<_Shelf> createState() => _ShelfState();
 }
 
@@ -151,7 +157,7 @@ class _ShelfState extends State<_Shelf> {
                         mainAxisSpacing:18,
                       ),
                       delegate:SliverChildBuilderDelegate(
-                        (_,index)=>_WorkCard(work:visible[index],onOpen:widget.onOpen,onDownload:widget.onDownload),
+                        (_,index)=>_WorkCard(work:visible[index],coverCache:widget.coverCache,onOpen:widget.onOpen,onDownload:widget.onDownload),
                         childCount:visible.length,
                       ),
                     ),
@@ -165,9 +171,10 @@ class _ShelfState extends State<_Shelf> {
 
 class _WorkCard extends StatelessWidget {
   final Work work;
+  final CoverCache coverCache;
   final ValueChanged<Edition> onOpen;
   final Future<void> Function(Edition) onDownload;
-  const _WorkCard({required this.work, required this.onOpen, required this.onDownload});
+  const _WorkCard({required this.work,required this.coverCache,required this.onOpen,required this.onDownload});
   @override Widget build(BuildContext context) => Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -178,7 +185,7 @@ class _WorkCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: Center(child: Icon(_icon(work.type), size: 56))),
+              Expanded(child:SizedBox(width:double.infinity,child:WorkCoverImage(work:work,cache:coverCache))),
               Text(work.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 6),
               Text(
@@ -193,8 +200,6 @@ class _WorkCard extends StatelessWidget {
           ),
         ),
       );
-
-  IconData _icon(String type) => switch (type) { 'manga' => Icons.menu_book, 'hq' => Icons.auto_stories, _ => Icons.book };
 }
 
 class _EditionSheet extends StatelessWidget {

@@ -17,10 +17,14 @@ REQUIRED = (
     "lib/models/catalog.dart",
     "lib/services/api.dart",
     "lib/services/app_services.dart",
+    "lib/services/cover_cache.dart",
     "lib/services/download.dart",
     "lib/services/session_vault.dart",
     "lib/ui/catalog_page.dart",
+    "lib/ui/cover_image.dart",
     "lib/ui/login_page.dart",
+    "lib/ui/signup_page.dart",
+    "lib/ui/admin_users_page.dart",
     "lib/ui/admin_catalog_page.dart",
     "lib/readers/reader_factory.dart",
 )
@@ -62,4 +66,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
