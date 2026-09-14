@@ -7,6 +7,7 @@ import 'services/sync.dart';
 import 'services/network_policy.dart';
 import 'ui/catalog_page.dart';
 import 'ui/login_page.dart';
+import 'ui/lume_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -138,7 +139,7 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
     navigatorKey:navigatorKey,
     debugShowCheckedModeBanner:false,
     title:'LUME',
-    theme:ThemeData(useMaterial3:true),
+    theme:LumeTheme.light(),
     home:restoringSession
       ? const Scaffold(body:Center(child:CircularProgressIndicator()))
       : services==null

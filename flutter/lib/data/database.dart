@@ -271,6 +271,36 @@ class LumeDb {
     return rows.map((r) => Map<String, dynamic>.from(jsonDecode(r['json'] as String))).toList();
   }
 
+  Future<List<Map<String,dynamic>>> listRecentReading(String profileId,{int limit=12}) async {
+    final d=await db;
+    final rows=await d.rawQuery('''
+      SELECT p.edition_id,p.percent,p.updated_at,p.completed,
+             e.work_id,e.json AS edition_json,w.json AS work_json
+      FROM progress p
+      JOIN editions e ON e.id=p.edition_id
+      JOIN works w ON w.id=e.work_id
+      WHERE p.profile_id=? AND p.completed=0 AND p.percent>0 AND p.percent<1
+      ORDER BY p.updated_at DESC
+      LIMIT ?
+    ''',[profileId,limit]);
+    return rows.map((row)=>{
+      ...Map<String,dynamic>.from(row),
+      'edition':Map<String,dynamic>.from(jsonDecode(row['edition_json'] as String)),
+      'work':Map<String,dynamic>.from(jsonDecode(row['work_json'] as String)),
+    }).toList(growable:false);
+  }
+
+  Future<Set<String>> readyOfflineWorkIds() async {
+    final d=await db;
+    final rows=await d.rawQuery('''
+      SELECT DISTINCT e.work_id
+      FROM offline_assets a
+      JOIN editions e ON e.id=a.edition_id
+      WHERE a.state='ready'
+    ''');
+    return rows.map((row)=>row['work_id'] as String).toSet();
+  }
+
   Future<Map<String, dynamic>?> editionJson(String editionId) async {
     final d = await db;
     final rows = await d.query('editions', columns: ['json'], where: 'id=?', whereArgs: [editionId], limit: 1);

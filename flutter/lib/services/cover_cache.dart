@@ -16,7 +16,11 @@ class CoverCache {
 
   CoverCache({required this.api,required this.directory});
 
-  Future<File?> resolve(Work work)=>_inflight.putIfAbsent(work.id,()=>_resolve(work).whenComplete(()=>_inflight.remove(work.id)));
+  Future<File?> resolve(Work work)=>_inflight.putIfAbsent(work.id,()=>_resolve(work).whenComplete((){
+    // A block deliberately returns void. Returning Map.remove's value here
+    // would return this same Future and make whenComplete wait on itself.
+    _inflight.remove(work.id);
+  }));
 
   Future<File?> _resolve(Work work) async {
     final cover=work.cover;

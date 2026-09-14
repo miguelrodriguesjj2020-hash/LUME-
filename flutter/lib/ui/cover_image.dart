@@ -8,6 +8,7 @@ class WorkCoverImage extends StatelessWidget {
   final CoverCache cache;
   final BorderRadius borderRadius;
   final BoxFit fit;
+  final Object? heroTag;
 
   const WorkCoverImage({
     super.key,
@@ -15,11 +16,11 @@ class WorkCoverImage extends StatelessWidget {
     required this.cache,
     this.borderRadius=const BorderRadius.all(Radius.circular(8)),
     this.fit=BoxFit.cover,
+    this.heroTag,
   });
 
-  @override Widget build(BuildContext context)=>Hero(
-    tag:'cover:${work.id}',
-    child:ClipRRect(
+  @override Widget build(BuildContext context){
+    final image=ClipRRect(
       borderRadius:borderRadius,
       child:ColoredBox(
         color:Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -32,8 +33,9 @@ class WorkCoverImage extends StatelessWidget {
           },
         ),
       ),
-    ),
-  );
+    );
+    return heroTag==null ? image : Hero(tag:heroTag!,child:image);
+  }
 
   Widget _placeholder(BuildContext context,{required bool failed})=>Center(
     child:Semantics(

@@ -78,6 +78,7 @@ class LibrarySection {
 
 class Work {
   final String id, title, type;
+  final String? author, description;
   final CoverAsset? cover;
   final List<String> sources;
   final List<Edition> editions;
@@ -88,6 +89,8 @@ class Work {
     required this.id,
     required this.title,
     required this.type,
+    this.author,
+    this.description,
     this.cover,
     required this.sources,
     required this.editions,
@@ -110,6 +113,8 @@ class Work {
       id:id,
       title:(j['displayTitle']??j['canonicalTitle']) as String,
       type:j['type'],
+      author:_optionalText(j['author']??j['creator']??j['writer']),
+      description:_optionalText(j['description']??j['summary']??j['synopsis']),
       cover:j['cover'] is Map
           ? CoverAsset.fromJson(Map<String,dynamic>.from(j['cover'] as Map))
           : null,
@@ -120,5 +125,10 @@ class Work {
       sections:sections,
       tags:List<String>.from(j['tags']??const[]),
     );
+  }
+
+  static String? _optionalText(dynamic value){
+    final text=value?.toString().trim();
+    return text==null || text.isEmpty ? null : text;
   }
 }
