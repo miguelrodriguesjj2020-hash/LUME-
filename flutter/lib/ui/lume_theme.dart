@@ -129,24 +129,25 @@ class _LumeMarkPainter extends CustomPainter {
   const _LumeMarkPainter(this.color);
 
   @override void paint(Canvas canvas,Size size){
-    final stroke=Paint()..color=color..style=PaintingStyle.stroke..strokeWidth=size*.075..strokeCap=StrokeCap.round..strokeJoin=StrokeJoin.round;
+    final unit=size.shortestSide;
+    final stroke=Paint()..color=color..style=PaintingStyle.stroke..strokeWidth=unit*.075..strokeCap=StrokeCap.round..strokeJoin=StrokeJoin.round;
     final left=Path()
-      ..moveTo(size*.12,size*.28)
-      ..quadraticBezierTo(size*.34,size*.2,size*.5,size*.38)
-      ..lineTo(size*.5,size*.82)
-      ..quadraticBezierTo(size*.34,size*.64,size*.12,size*.72)
+      ..moveTo(unit*.12,unit*.28)
+      ..quadraticBezierTo(unit*.34,unit*.2,unit*.5,unit*.38)
+      ..lineTo(unit*.5,unit*.82)
+      ..quadraticBezierTo(unit*.34,unit*.64,unit*.12,unit*.72)
       ..close();
     final right=Path()
-      ..moveTo(size*.88,size*.28)
-      ..quadraticBezierTo(size*.66,size*.2,size*.5,size*.38)
-      ..lineTo(size*.5,size*.82)
-      ..quadraticBezierTo(size*.66,size*.64,size*.88,size*.72)
+      ..moveTo(unit*.88,unit*.28)
+      ..quadraticBezierTo(unit*.66,unit*.2,unit*.5,unit*.38)
+      ..lineTo(unit*.5,unit*.82)
+      ..quadraticBezierTo(unit*.66,unit*.64,unit*.88,unit*.72)
       ..close();
     canvas.drawPath(left,stroke);canvas.drawPath(right,stroke);
     final flame=Path()
-      ..moveTo(size*.5,size*.08)
-      ..cubicTo(size*.64,size*.22,size*.61,size*.32,size*.5,size*.38)
-      ..cubicTo(size*.39,size*.31,size*.37,size*.21,size*.5,size*.08)
+      ..moveTo(unit*.5,unit*.08)
+      ..cubicTo(unit*.64,unit*.22,unit*.61,unit*.32,unit*.5,unit*.38)
+      ..cubicTo(unit*.39,unit*.31,unit*.37,unit*.21,unit*.5,unit*.08)
       ..close();
     canvas.drawPath(flame,Paint()..color=color..style=PaintingStyle.fill);
   }

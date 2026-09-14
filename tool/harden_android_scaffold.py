@@ -69,7 +69,7 @@ for attr,value in attrs.items():
 res=ANDROID/'app'/'src'/'main'/'res'
 drawable=res/'drawable'
 drawable.mkdir(parents=True,exist_ok=True)
-(drawable/'lume_launcher.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp"\n    android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="#17223B" android:pathData="M0,0H108V108H0Z"/>\n    <path android:fillColor="#F7F4EA" android:pathData="M25,22H51C58,22 62,25 64,29C66,25 70,22 77,22H83V82H76C69,82 66,84 64,88C62,84 59,82 52,82H25Z"/>\n    <path android:fillColor="#17223B" android:pathData="M60,30H68V72H82V80H60Z"/>\n    <path android:fillColor="#C8A96A" android:pathData="M62,22H66V87H62Z"/>\n</vector>\n''')
+(drawable/'lume_launcher.xml').write_text('''<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp" android:height="108dp"\n    android:viewportWidth="108" android:viewportHeight="108">\n    <path android:fillColor="#17201C" android:pathData="M0,0H108V108H0Z"/>\n    <path android:fillColor="#F3EFE5" android:pathData="M25,22H51C58,22 62,25 64,29C66,25 70,22 77,22H83V82H76C69,82 66,84 64,88C62,84 59,82 52,82H25Z"/>\n    <path android:fillColor="#17201C" android:pathData="M60,30H68V72H82V80H60Z"/>\n    <path android:fillColor="#C45736" android:pathData="M62,22H66V87H62Z"/>\n</vector>\n''')
 if 'android:icon="@mipmap/ic_launcher"' in s:
     s=s.replace('android:icon="@mipmap/ic_launcher"','android:icon="@drawable/lume_launcher"',1)
 elif 'android:icon="@drawable/lume_launcher"' not in s:
