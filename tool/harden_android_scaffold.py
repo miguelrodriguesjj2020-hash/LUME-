@@ -14,28 +14,15 @@ def replace_once(path,old,new):
         raise SystemExit(f'{p}: expected exactly one occurrence of {old!r}, found {count}')
     p.write_text(s.replace(old,new,1))
 
-# Freeze the catalog bootstrap race fix that passed the full Android 15
-# student journey. Shelves must not read SQLite before the initial bootstrap
-# refresh finishes; once finished, they render the refreshed DB or the
-# preserved local/offline state if the network refresh failed.
-catalog=ROOT/'flutter'/'lib'/'ui'/'catalog_page.dart'
-old_catalog='''  @override Widget build(BuildContext context) => FutureBuilder<void>(\n        future: initialRefresh,\n        builder: (context, _) => DefaultTabController(\n          length: 3,\n          child: Scaffold(\n'''
-new_catalog='''  @override Widget build(BuildContext context) => FutureBuilder<void>(\n        future: initialRefresh,\n        builder: (context, snapshot) {\n          if (snapshot.connectionState != ConnectionState.done) {\n            return const Scaffold(body: Center(child: CircularProgressIndicator()));\n          }\n          return DefaultTabController(\n          length: 3,\n          child: Scaffold(\n'''
-replace_once(catalog,old_catalog,new_catalog)
-old_catalog_tail='''            ]),\n          ),\n        ),\n      );\n}\n'''
-new_catalog_tail='''            ]),\n          ),\n        );\n        },\n      );\n}\n'''
-replace_once(catalog,old_catalog_tail,new_catalog_tail)
-
-# Explicit semantic labels for the two authentication fields. Flutter already
-# renders them as editable controls; these wrappers ensure Android accessibility
-# services receive stable names without relying on decoration inference.
-login=ROOT/'flutter'/'lib'/'ui'/'login_page.dart'
-old_user="""              TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),\n"""
-new_user="""              Semantics(\n                label:'Usuário',\n                textField:true,\n                child:TextField(controller:user,autofillHints:const[AutofillHints.username],decoration:const InputDecoration(labelText:'Usuário')),\n              ),\n"""
-replace_once(login,old_user,new_user)
-old_pass="""              TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),\n"""
-new_pass="""              Semantics(\n                label:'Senha',\n                textField:true,\n                child:TextField(controller:pass,obscureText:true,autofillHints:const[AutofillHints.password],onSubmitted:(_)=>submit(),decoration:const InputDecoration(labelText:'Senha')),\n              ),\n"""
-replace_once(login,old_pass,new_pass)
+# Flutter source is reviewed and versioned directly. This script only hardens
+# the generated Android scaffold; mutating Dart here would make local and CI
+# compile different applications.
+catalog=(ROOT/'flutter'/'lib'/'ui'/'catalog_page.dart').read_text()
+login=(ROOT/'flutter'/'lib'/'ui'/'login_page.dart').read_text()
+if 'initialRefresh' not in catalog:
+    raise SystemExit('catalog bootstrap synchronization missing from direct source')
+if login.count("label:'Usuário'") != 1 or login.count("label:'Senha'") != 1:
+    raise SystemExit('explicit login semantics missing from direct source')
 
 build=ANDROID/'app'/'build.gradle.kts'
 replace_once(build,f'namespace = "{OLD}"',f'namespace = "{PACKAGE}"')
