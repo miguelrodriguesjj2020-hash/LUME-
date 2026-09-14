@@ -1,0 +1,2882 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": {
+    "legacyCatalogRevision": 1,
+    "curationSchemaVersion": 1
+  },
+  "counts": {
+    "manga": 188,
+    "book": 60,
+    "hq": 87,
+    "magazine": 1,
+    "total": 336
+  },
+  "works": [
+    {
+      "id": "manga-20th-century-boys",
+      "title": "20TH CENTURY BOYS",
+      "type": "manga",
+      "editionCount": 12,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-4-knights-of-the-apocalypse",
+      "title": "4 KNIGHTS OF THE APOCALYPSE",
+      "type": "manga",
+      "editionCount": 24,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-a-condition-called-love",
+      "title": "A CONDITION CALLED LOVE",
+      "type": "manga",
+      "editionCount": 40,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-a-drifting-life",
+      "title": "A DRIFTING LIFE",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-a-sign-of-affection",
+      "title": "A SIGN OF AFFECTION",
+      "type": "manga",
+      "editionCount": 53,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-abara",
+      "title": "ABARA",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-after-school-at-a-family-restaurant-at-night-with-that-girl-from-my-class",
+      "title": "AFTER SCHOOL, AT A FAMILY RESTAURANT AT NIGHT, WITH THAT GIRL FROM MY CLASS",
+      "type": "manga",
+      "editionCount": 13,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-ajin",
+      "title": "AJIN",
+      "type": "manga",
+      "editionCount": 17,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-akame-ga-kill",
+      "title": "AKAME GA KILL",
+      "type": "manga",
+      "editionCount": 82,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-akira",
+      "title": "AKIRA",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-aku-no-hana",
+      "title": "AKU NO HANA",
+      "type": "manga",
+      "editionCount": 11,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-alita",
+      "title": "ALITA",
+      "type": "manga",
+      "editionCount": 9,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-aposimz",
+      "title": "APOSIMZ",
+      "type": "manga",
+      "editionCount": 9,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-aqua",
+      "title": "AQUA",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-arakawa-under-the-bridge",
+      "title": "Arakawa Under the Bridge",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-ashita-no-joe",
+      "title": "ASHITA NO JOE",
+      "type": "manga",
+      "editionCount": 20,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-attack-on-titan",
+      "title": "ATTACK ON TITAN",
+      "type": "manga",
+      "editionCount": 7,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-ayako",
+      "title": "AYAKO",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-bakuon-rettou",
+      "title": "BAKUON RETTOU",
+      "type": "manga",
+      "editionCount": 18,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-beck",
+      "title": "BECK",
+      "type": "manga",
+      "editionCount": 34,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-berserk",
+      "title": "BERSERK",
+      "type": "manga",
+      "editionCount": 50,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-billy-bat",
+      "title": "BILLY BAT",
+      "type": "manga",
+      "editionCount": 20,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-black-clover",
+      "title": "BLACK CLOVER",
+      "type": "manga",
+      "editionCount": 50,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-blame",
+      "title": "BLAME!",
+      "type": "manga",
+      "editionCount": 7,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-blame-academy",
+      "title": "BLAME! ACADEMY",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-bleach",
+      "title": "BLEACH",
+      "type": "manga",
+      "editionCount": 37,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-bloodharley-s-coach",
+      "title": "BLOODHARLEY_S COACH",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-blue-lock",
+      "title": "BLUE LOCK",
+      "type": "manga",
+      "editionCount": 34,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-boruto",
+      "title": "BORUTO",
+      "type": "manga",
+      "editionCount": 23,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-boruto-two-blue-vortex",
+      "title": "BORUTO TWO BLUE VORTEX",
+      "type": "manga",
+      "editionCount": 12,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-bsd-beast",
+      "title": "BSD BEAST",
+      "type": "manga",
+      "editionCount": 4,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-buddha",
+      "title": "BUDDHA",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-chi-no-wadachi",
+      "title": "CHI NO WADACHI",
+      "type": "manga",
+      "editionCount": 17,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-chijou-saikyou-no-otoko-ryu",
+      "title": "CHIJOU SAIKYOU NO OTOKO RYU",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-children-of-the-sea",
+      "title": "CHILDREN OF THE SEA",
+      "type": "manga",
+      "editionCount": 5,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-chinpui",
+      "title": "CHINPUI",
+      "type": "manga",
+      "editionCount": 4,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-choujin",
+      "title": "CHOUJIN",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-classroom-of-the-elite",
+      "title": "CLASSROOM OF THE ELITE",
+      "type": "manga",
+      "editionCount": 119,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dandadan",
+      "title": "DANDADAN",
+      "type": "manga",
+      "editionCount": 61,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dear-anemone",
+      "title": "DEAR ANEMONE",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-death-note",
+      "title": "DEATH NOTE",
+      "type": "manga",
+      "editionCount": 17,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-demon-slayer",
+      "title": "DEMON SLAYER",
+      "type": "manga",
+      "editionCount": 24,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-devilman",
+      "title": "DEVILMAN",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-diamond-no-ace",
+      "title": "DIAMOND NO ACE",
+      "type": "manga",
+      "editionCount": 48,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-diamond-no-ace-ii",
+      "title": "DIAMOND NO ACE II",
+      "type": "manga",
+      "editionCount": 34,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dorohedoro",
+      "title": "DOROHEDORO",
+      "type": "manga",
+      "editionCount": 23,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dr-stone",
+      "title": "DR. STONE",
+      "type": "manga",
+      "editionCount": 25,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dragon-ball",
+      "title": "DRAGON BALL",
+      "type": "manga",
+      "editionCount": 105,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dragon-head",
+      "title": "DRAGON HEAD",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-dungeon-meshi",
+      "title": "DUNGEON MESHI",
+      "type": "manga",
+      "editionCount": 14,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-duranki",
+      "title": "DURANKI",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-eden",
+      "title": "EDEN",
+      "type": "manga",
+      "editionCount": 18,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-edens-zero",
+      "title": "EDENS ZERO",
+      "type": "manga",
+      "editionCount": 33,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-fairy-tail",
+      "title": "FAIRY TAIL",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-fantasy-world-jun",
+      "title": "FANTASY WORLD JUN",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-feng-shen-ji-i",
+      "title": "FENG SHEN JI I",
+      "type": "manga",
+      "editionCount": 37,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-feng-shen-ji-ii",
+      "title": "FENG SHEN JI II",
+      "type": "manga",
+      "editionCount": 63,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-feng-shen-ji-iii",
+      "title": "FENG SHEN JI III",
+      "type": "manga",
+      "editionCount": 78,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-final-fantasy",
+      "title": "FINAL FANTASY",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-fire-force",
+      "title": "FIRE FORCE",
+      "type": "manga",
+      "editionCount": 34,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-food-wars",
+      "title": "FOOD WARS",
+      "type": "manga",
+      "editionCount": 36,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-frieren",
+      "title": "FRIEREN",
+      "type": "manga",
+      "editionCount": 18,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-gachiakuta",
+      "title": "GACHIAKUTA",
+      "type": "manga",
+      "editionCount": 32,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-gantz",
+      "title": "GANTZ",
+      "type": "manga",
+      "editionCount": 37,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-gash-bell",
+      "title": "GASH BELL",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-genesis-evangelion",
+      "title": "GENESIS EVANGELION",
+      "type": "manga",
+      "editionCount": 14,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-ghost-in-the-shell",
+      "title": "GHOST IN THE SHELL",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-giganto-maxia",
+      "title": "GIGANTO MAXIA",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-gintama",
+      "title": "GINTAMA",
+      "type": "manga",
+      "editionCount": 77,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-goblin-slayer",
+      "title": "GOBLIN SLAYER",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-goggles",
+      "title": "GOGGLES",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-gogo-monster",
+      "title": "GOGO MONSTER",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-green-blood",
+      "title": "GREEN BLOOD",
+      "type": "manga",
+      "editionCount": 5,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-grimoire-of-zero",
+      "title": "GRIMOIRE OF ZERO",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-gto",
+      "title": "GTO",
+      "type": "manga",
+      "editionCount": 25,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-h2",
+      "title": "H2",
+      "type": "manga",
+      "editionCount": 17,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-haikyu",
+      "title": "HAIKYU",
+      "type": "manga",
+      "editionCount": 44,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hajime-no-ipoo",
+      "title": "HAJIME NO IPOO",
+      "type": "manga",
+      "editionCount": 144,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hellsing",
+      "title": "HELLSING",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hideout",
+      "title": "HIDEOUT",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hikari-no-machi",
+      "title": "HIKARI NO MACHI",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hikaru-ga-shinda-natsu",
+      "title": "HIKARU GA SHINDA NATSU",
+      "type": "manga",
+      "editionCount": 32,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hirano-to-kagiura",
+      "title": "HIRANO TO KAGIURA",
+      "type": "manga",
+      "editionCount": 7,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hokuto-no-ken",
+      "title": "HOKUTO NO KEN",
+      "type": "manga",
+      "editionCount": 27,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-homunculus",
+      "title": "Homunculus",
+      "type": "manga",
+      "editionCount": 15,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-houkesi-no-kuni",
+      "title": "HOUKESI NO KUNI",
+      "type": "manga",
+      "editionCount": 13,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-hunter-x-hunter",
+      "title": "HUNTER X HUNTER",
+      "type": "manga",
+      "editionCount": 50,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-iceland",
+      "title": "ICELAND",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-innocent",
+      "title": "INNOCENT",
+      "type": "manga",
+      "editionCount": 3,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-itsumo-misora",
+      "title": "ITSUMO MISORA",
+      "type": "manga",
+      "editionCount": 5,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-japan",
+      "title": "JAPAN",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-jigokuraku",
+      "title": "JIGOKURAKU",
+      "type": "manga",
+      "editionCount": 13,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-jiraishin",
+      "title": "JIRAISHIN",
+      "type": "manga",
+      "editionCount": 19,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-jojo-s-bizarre-adventure",
+      "title": "JOJO_S BIZARRE ADVENTURE",
+      "type": "manga",
+      "editionCount": 123,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-jojolands",
+      "title": "JOJOLANDS",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-journey-to-the-end-of-the-world",
+      "title": "JOURNEY TO THE END OF THE WORLD",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-jujutsu-kaisen",
+      "title": "JUJUTSU KAISEN",
+      "type": "manga",
+      "editionCount": 31,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-jujutsu-kaisen-modulo",
+      "title": "JUJUTSU KAISEN MODULO",
+      "type": "manga",
+      "editionCount": 12,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kagurabachi",
+      "title": "KAGURABACHI",
+      "type": "manga",
+      "editionCount": 33,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kaoru-hana",
+      "title": "KAORU HANA",
+      "type": "manga",
+      "editionCount": 38,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-katekyo-hitman-reborn",
+      "title": "KATEKYO HITMAN REBORN",
+      "type": "manga",
+      "editionCount": 42,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kijin-gentoushou",
+      "title": "KIJIN GENTOUSHOU",
+      "type": "manga",
+      "editionCount": 35,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-king-of-wolves",
+      "title": "KING OF WOLVES",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kingdom",
+      "title": "KINGDOM",
+      "type": "manga",
+      "editionCount": 48,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-knights-of-sidonia",
+      "title": "KNIGHTS OF SIDONIA",
+      "type": "manga",
+      "editionCount": 15,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kokou-no-hito",
+      "title": "KOKOU NO HITO",
+      "type": "manga",
+      "editionCount": 17,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kounodori",
+      "title": "KOUNODORI",
+      "type": "manga",
+      "editionCount": 32,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-kozure-ookami",
+      "title": "KOZURE OOKAMI",
+      "type": "manga",
+      "editionCount": 28,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-leviathan",
+      "title": "LEVIATHAN",
+      "type": "manga",
+      "editionCount": 12,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-liar-game-roots",
+      "title": "LIAR GAME ROOTS",
+      "type": "manga",
+      "editionCount": 20,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-love-hina",
+      "title": "LOVE HINA",
+      "type": "manga",
+      "editionCount": 5,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-leviathan-b1a2f63e",
+      "title": "LÉVIATHAN",
+      "type": "manga",
+      "editionCount": 3,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-made-in-abyss",
+      "title": "MADE IN ABYSS",
+      "type": "manga",
+      "editionCount": 14,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-magi",
+      "title": "MAGI",
+      "type": "manga",
+      "editionCount": 37,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-mai",
+      "title": "MAI",
+      "type": "manga",
+      "editionCount": 6,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-mairimashita-iruma-kun",
+      "title": "MAIRIMASHITA! IRUMA-KUN",
+      "type": "manga",
+      "editionCount": 30,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-mangas-de-terror",
+      "title": "MANGÁS DE TERROR",
+      "type": "manga",
+      "editionCount": 21,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-manhole",
+      "title": "MANHOLE",
+      "type": "manga",
+      "editionCount": 3,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-me-the-devil-blue",
+      "title": "ME & THE DEVIL BLUE",
+      "type": "manga",
+      "editionCount": 5,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-mirai-nikki",
+      "title": "MIRAI NIKKI",
+      "type": "manga",
+      "editionCount": 12,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-monster",
+      "title": "MONSTER",
+      "type": "manga",
+      "editionCount": 9,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-mushishi",
+      "title": "MUSHISHI",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-mushoku-tensei",
+      "title": "MUSHOKU TENSEI",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-my-crossdressing-senpai-colorido",
+      "title": "MY CROSSDRESSING SENPAI (COLORIDO)",
+      "type": "manga",
+      "editionCount": 31,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-my-hero-academia",
+      "title": "MY HERO ACADEMIA",
+      "type": "manga",
+      "editionCount": 43,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-naruto",
+      "title": "NARUTO",
+      "type": "manga",
+      "editionCount": 172,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-nausicaa",
+      "title": "NAUSICAA",
+      "type": "manga",
+      "editionCount": 7,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-nina-a-noiva-estrelada",
+      "title": "NINA A NOIVA ESTRELADA",
+      "type": "manga",
+      "editionCount": 24,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-noise",
+      "title": "NOISE",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-ode-to-kirihito",
+      "title": "ODE TO KIRIHITO",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-okaeri-alice",
+      "title": "OKAERI ALICE",
+      "type": "manga",
+      "editionCount": 7,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-one-piece",
+      "title": "ONE PIECE",
+      "type": "manga",
+      "editionCount": 175,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-one-punch-man",
+      "title": "ONE PUNCH MAN",
+      "type": "manga",
+      "editionCount": 73,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-os-cavaleiros-dos-zodiacos",
+      "title": "OS CAVALEIROS DOS ZODÍACOS",
+      "type": "manga",
+      "editionCount": 153,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-pandora-hearts",
+      "title": "PANDORA HEARTS",
+      "type": "manga",
+      "editionCount": 25,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-parasyte",
+      "title": "PARASYTE",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-ping-pong",
+      "title": "PING PONG",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-planetes",
+      "title": "PLANETES",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-pluto",
+      "title": "PLUTO",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-pokemon",
+      "title": "POKÉMON",
+      "type": "manga",
+      "editionCount": 66,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-r-e-heavenly-insland",
+      "title": "R.E HEAVENLY INSLAND",
+      "type": "manga",
+      "editionCount": 5,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-rave-master",
+      "title": "RAVE MASTER",
+      "type": "manga",
+      "editionCount": 35,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-re-zero",
+      "title": "RE_ ZERO",
+      "type": "manga",
+      "editionCount": 34,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-real",
+      "title": "REAL",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-records-of-ragnarok",
+      "title": "RECORDS OF RAGNAROK",
+      "type": "manga",
+      "editionCount": 32,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-red-colored-elegy",
+      "title": "RED COLORED ELEGY",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-sailor-moon",
+      "title": "SAILOR MOON",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-sakamoto-days",
+      "title": "SAKAMOTO DAYS",
+      "type": "manga",
+      "editionCount": 44,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-sakura-card-captors",
+      "title": "SAKURA CARD CAPTORS",
+      "type": "manga",
+      "editionCount": 9,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-sanctuary",
+      "title": "SANCTUARY",
+      "type": "manga",
+      "editionCount": 6,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-sekiro",
+      "title": "SEKIRO",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-shangri-la-frontier",
+      "title": "SHANGRI-LA FRONTIER",
+      "type": "manga",
+      "editionCount": 23,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-shigurui",
+      "title": "SHIGURUI",
+      "type": "manga",
+      "editionCount": 15,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-shuna-no-tabi",
+      "title": "SHUNA NO TABI",
+      "type": "manga",
+      "editionCount": 1,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-skip-and-loafer",
+      "title": "SKIP AND LOAFER",
+      "type": "manga",
+      "editionCount": 65,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-skyhigh",
+      "title": "Skyhigh",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-slam-dunk",
+      "title": "SLAM DUNK",
+      "type": "manga",
+      "editionCount": 31,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-soil",
+      "title": "SOIL",
+      "type": "manga",
+      "editionCount": 11,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-solanin",
+      "title": "SOLANIN",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-soul-eater",
+      "title": "SOUL EATER",
+      "type": "manga",
+      "editionCount": 25,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-sword-art-online",
+      "title": "SWORD ART ONLINE",
+      "type": "manga",
+      "editionCount": 9,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-takemitsu",
+      "title": "TAKEMITSU",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-tanaka-the-wizard",
+      "title": "TANAKA THE WIZARD",
+      "type": "manga",
+      "editionCount": 19,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-tengoku-daimakyo",
+      "title": "TENGOKU DAIMAKYO",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-fable",
+      "title": "THE FABLE",
+      "type": "manga",
+      "editionCount": 22,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-king-of-the-fighters",
+      "title": "THE KING OF THE FIGHTERS",
+      "type": "manga",
+      "editionCount": 50,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-music-of-marie",
+      "title": "THE MUSIC OF MARIE",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-promised-nerverland",
+      "title": "THE PROMISED NERVERLAND",
+      "type": "manga",
+      "editionCount": 20,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-ravages-of-time",
+      "title": "THE RAVAGES OF TIME",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-stellar-swordmaster",
+      "title": "THE STELLAR SWORDMASTER",
+      "type": "manga",
+      "editionCount": 38,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-way-of-ryu",
+      "title": "THE WAY OF RYU",
+      "type": "manga",
+      "editionCount": 8,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-world-is-mine",
+      "title": "THE WORLD IS MINE",
+      "type": "manga",
+      "editionCount": 14,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-the-yakuza-s-guide-to-babysitting",
+      "title": "THE YAKUZA_S GUIDE TO BABYSITTING",
+      "type": "manga",
+      "editionCount": 77,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-tokyo-ghoul",
+      "title": "TOKYO GHOUL",
+      "type": "manga",
+      "editionCount": 14,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-tokyo-ghoul-re",
+      "title": "TOKYO GHOUL_RE",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-totsukuni-no-shoujo",
+      "title": "TOTSUKUNI NO SHOUJO",
+      "type": "manga",
+      "editionCount": 11,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-tower-dungeon",
+      "title": "TOWER DUNGEON",
+      "type": "manga",
+      "editionCount": 6,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-trigun",
+      "title": "TRIGUN",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-tsubasa-rc",
+      "title": "TSUBASA RC",
+      "type": "manga",
+      "editionCount": 10,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-undead-unluck",
+      "title": "UNDEAD UNLUCK",
+      "type": "manga",
+      "editionCount": 27,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-vagabond",
+      "title": "VAGABOND",
+      "type": "manga",
+      "editionCount": 44,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-vinland-saga",
+      "title": "VINLAND SAGA",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-violet-evergarden",
+      "title": "VIOLET EVERGARDEN",
+      "type": "manga",
+      "editionCount": 2,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-wistoria",
+      "title": "WISTORIA",
+      "type": "manga",
+      "editionCount": 54,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-yoake-no-yuta",
+      "title": "YOAKE NO YUTA",
+      "type": "manga",
+      "editionCount": 11,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-yokohama-kaidashi-kikou",
+      "title": "YOKOHAMA KAIDASHI KIKOU",
+      "type": "manga",
+      "editionCount": 14,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-yotsuba-to",
+      "title": "YOTSUBA TO!",
+      "type": "manga",
+      "editionCount": 16,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "id": "manga-yu-yu-hakusho",
+      "title": "YU YU HAKUSHO",
+      "type": "manga",
+      "editionCount": 19,
+      "catalogStatus": "existing-normalized",
+      "coverStatus": "source-review-required"
+    },
+    {
+      "title": "Orgulho e Preconceito",
+      "author": "Jane Austen",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-orgulho-e-preconceito"
+    },
+    {
+      "title": "Frankenstein",
+      "author": "Mary Shelley",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-frankenstein"
+    },
+    {
+      "title": "Drácula",
+      "author": "Bram Stoker",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-dracula"
+    },
+    {
+      "title": "O Retrato de Dorian Gray",
+      "author": "Oscar Wilde",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-retrato-de-dorian-gray"
+    },
+    {
+      "title": "Jane Eyre",
+      "author": "Charlotte Brontë",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-jane-eyre"
+    },
+    {
+      "title": "O Morro dos Ventos Uivantes",
+      "author": "Emily Brontë",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-morro-dos-ventos-uivantes"
+    },
+    {
+      "title": "O Grande Gatsby",
+      "author": "F. Scott Fitzgerald",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-grande-gatsby"
+    },
+    {
+      "title": "O Sol é para Todos",
+      "author": "Harper Lee",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-sol-e-para-todos"
+    },
+    {
+      "title": "O Apanhador no Campo de Centeio",
+      "author": "J. D. Salinger",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-apanhador-no-campo-de-centeio"
+    },
+    {
+      "title": "A Revolução dos Bichos",
+      "author": "George Orwell",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-revolucao-dos-bichos"
+    },
+    {
+      "title": "Admirável Mundo Novo",
+      "author": "Aldous Huxley",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-admiravel-mundo-novo"
+    },
+    {
+      "title": "Crime e Castigo",
+      "author": "Fiódor Dostoiévski",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-crime-e-castigo"
+    },
+    {
+      "title": "Memórias do Subsolo",
+      "author": "Fiódor Dostoiévski",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-memorias-do-subsolo"
+    },
+    {
+      "title": "Guerra e Paz",
+      "author": "Liev Tolstói",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-guerra-e-paz"
+    },
+    {
+      "title": "Anna Kariênina",
+      "author": "Liev Tolstói",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-anna-karienina"
+    },
+    {
+      "title": "Dom Quixote",
+      "author": "Miguel de Cervantes",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-dom-quixote"
+    },
+    {
+      "title": "Os Miseráveis",
+      "author": "Victor Hugo",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-os-miseraveis"
+    },
+    {
+      "title": "O Conde de Monte Cristo",
+      "author": "Alexandre Dumas",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-conde-de-monte-cristo"
+    },
+    {
+      "title": "Madame Bovary",
+      "author": "Gustave Flaubert",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-madame-bovary"
+    },
+    {
+      "title": "A Metamorfose",
+      "author": "Franz Kafka",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-metamorfose"
+    },
+    {
+      "title": "Cem Anos de Solidão",
+      "author": "Gabriel García Márquez",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-cem-anos-de-solidao"
+    },
+    {
+      "title": "O Amor nos Tempos do Cólera",
+      "author": "Gabriel García Márquez",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-amor-nos-tempos-do-colera"
+    },
+    {
+      "title": "Sidarta",
+      "author": "Hermann Hesse",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-sidarta"
+    },
+    {
+      "title": "Moby Dick",
+      "author": "Herman Melville",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-moby-dick"
+    },
+    {
+      "title": "Ratos e Homens",
+      "author": "John Steinbeck",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-ratos-e-homens"
+    },
+    {
+      "title": "Grandes Esperanças",
+      "author": "Charles Dickens",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-grandes-esperancas"
+    },
+    {
+      "title": "Oliver Twist",
+      "author": "Charles Dickens",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-oliver-twist"
+    },
+    {
+      "title": "Um Conto de Duas Cidades",
+      "author": "Charles Dickens",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-um-conto-de-duas-cidades"
+    },
+    {
+      "title": "Mulherzinhas",
+      "author": "Louisa May Alcott",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-mulherzinhas"
+    },
+    {
+      "title": "Alice no País das Maravilhas",
+      "author": "Lewis Carroll",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-alice-no-pais-das-maravilhas"
+    },
+    {
+      "title": "As Aventuras de Huckleberry Finn",
+      "author": "Mark Twain",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-as-aventuras-de-huckleberry-finn"
+    },
+    {
+      "title": "As Aventuras de Tom Sawyer",
+      "author": "Mark Twain",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-as-aventuras-de-tom-sawyer"
+    },
+    {
+      "title": "A Ilha do Tesouro",
+      "author": "Robert Louis Stevenson",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-ilha-do-tesouro"
+    },
+    {
+      "title": "O Chamado Selvagem",
+      "author": "Jack London",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-chamado-selvagem"
+    },
+    {
+      "title": "A Guerra dos Mundos",
+      "author": "H. G. Wells",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-guerra-dos-mundos"
+    },
+    {
+      "title": "Vinte Mil Léguas Submarinas",
+      "author": "Jules Verne",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-vinte-mil-leguas-submarinas"
+    },
+    {
+      "title": "O Médico e o Monstro",
+      "author": "R. L. Stevenson",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-medico-e-o-monstro"
+    },
+    {
+      "title": "O Senhor das Moscas",
+      "author": "William Golding",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-senhor-das-moscas"
+    },
+    {
+      "title": "O Guia do Mochileiro das Galáxias",
+      "author": "Douglas Adams",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-guia-do-mochileiro-das-galaxias"
+    },
+    {
+      "title": "Belas Maldições",
+      "alternateTitle": "Good Omens",
+      "author": "Neil Gaiman e Terry Pratchett",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-belas-maldicoes"
+    },
+    {
+      "title": "O Senhor dos Anéis",
+      "author": "J. R. R. Tolkien",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-senhor-dos-aneis"
+    },
+    {
+      "title": "O Hobbit",
+      "author": "J. R. R. Tolkien",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-hobbit"
+    },
+    {
+      "title": "O Leão, a Feiticeira e o Guarda-Roupa",
+      "author": "C. S. Lewis",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-leao-a-feiticeira-e-o-guarda-roupa"
+    },
+    {
+      "title": "Harry Potter e a Pedra Filosofal",
+      "author": "J. K. Rowling",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-harry-potter-e-a-pedra-filosofal"
+    },
+    {
+      "title": "Harry Potter e a Câmara Secreta",
+      "author": "J. K. Rowling",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-harry-potter-e-a-camara-secreta"
+    },
+    {
+      "title": "A Fantástica Fábrica de Chocolate",
+      "author": "Roald Dahl",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-fantastica-fabrica-de-chocolate"
+    },
+    {
+      "title": "Artemis Fowl",
+      "author": "Eoin Colfer",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-artemis-fowl"
+    },
+    {
+      "title": "O Mágico de Oz",
+      "author": "L. Frank Baum",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-magico-de-oz"
+    },
+    {
+      "title": "O Livro da Selva",
+      "author": "Rudyard Kipling",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-livro-da-selva"
+    },
+    {
+      "title": "O Código Da Vinci",
+      "author": "Dan Brown",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-codigo-da-vinci"
+    },
+    {
+      "title": "Os Pilares da Terra",
+      "author": "Ken Follett",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-os-pilares-da-terra"
+    },
+    {
+      "title": "O Caçador de Pipas",
+      "author": "Khaled Hosseini",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-cacador-de-pipas"
+    },
+    {
+      "title": "A Cidade do Sol",
+      "alternateTitle": "A Thousand Splendid Suns",
+      "author": "Khaled Hosseini",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-cidade-do-sol"
+    },
+    {
+      "title": "Pessoas Normais",
+      "author": "Sally Rooney",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-pessoas-normais"
+    },
+    {
+      "title": "Norwegian Wood",
+      "author": "Haruki Murakami",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-norwegian-wood"
+    },
+    {
+      "title": "Kafka à Beira-Mar",
+      "author": "Haruki Murakami",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-kafka-a-beira-mar"
+    },
+    {
+      "title": "O Alquimista",
+      "author": "Paulo Coelho",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-o-alquimista"
+    },
+    {
+      "title": "A Dança da Morte",
+      "alternateTitle": "The Stand",
+      "author": "Stephen King",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-a-danca-da-morte"
+    },
+    {
+      "title": "Novembro de 63",
+      "alternateTitle": "11/22/63",
+      "author": "Stephen King",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-novembro-de-63"
+    },
+    {
+      "title": "Rebecca",
+      "author": "Daphne du Maurier",
+      "type": "book",
+      "editionCount": 0,
+      "catalogStatus": "source-match-required",
+      "coverStatus": "source-review-required",
+      "id": "book-rebecca"
+    },
+    {
+      "title": "A Saga do Monstro do Pântano",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-saga-do-monstro-do-pantano"
+    },
+    {
+      "title": "Homem-Animal",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-homem-animal"
+    },
+    {
+      "title": "Arqueiro Verde",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-arqueiro-verde"
+    },
+    {
+      "title": "V de Vingança",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-v-de-vinganca"
+    },
+    {
+      "title": "Absolute Caçador de Marte",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-absolute-cacador-de-marte"
+    },
+    {
+      "title": "Cavaleiro da Lua",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-cavaleiro-da-lua"
+    },
+    {
+      "title": "Trindade",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-trindade"
+    },
+    {
+      "title": "Tartarugas Ninja",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-tartarugas-ninja"
+    },
+    {
+      "title": "Power Rangers",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-power-rangers"
+    },
+    {
+      "title": "O Máskara",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-o-maskara"
+    },
+    {
+      "title": "Sherlock Holmes",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-sherlock-holmes"
+    },
+    {
+      "title": "Snoopy / Peanuts",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-snoopy-peanuts"
+    },
+    {
+      "title": "Garfield",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-garfield"
+    },
+    {
+      "title": "Pernalonga",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-pernalonga"
+    },
+    {
+      "title": "Pica-Pau",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-pica-pau"
+    },
+    {
+      "title": "Scooby-Doo",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-scooby-doo"
+    },
+    {
+      "title": "Os Simpsons",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-os-simpsons"
+    },
+    {
+      "title": "Os Incríveis",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-os-incriveis"
+    },
+    {
+      "title": "Bolota",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-bolota"
+    },
+    {
+      "title": "Brotoeja",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-brotoeja"
+    },
+    {
+      "title": "Venom",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-venom"
+    },
+    {
+      "title": "Feiticeira Escarlate",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-feiticeira-escarlate"
+    },
+    {
+      "title": "Mulher-Hulk",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-mulher-hulk"
+    },
+    {
+      "title": "Loki",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-loki"
+    },
+    {
+      "title": "Jessica Jones",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-jessica-jones"
+    },
+    {
+      "title": "Gwen-Aranha / Aranha-Fantasma",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-gwen-aranha-aranha-fantasma"
+    },
+    {
+      "title": "Predador",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-predador"
+    },
+    {
+      "title": "Edição Especial Marvel 1971",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-edicao-especial-marvel-1971"
+    },
+    {
+      "title": "Arquivo X",
+      "type": "hq",
+      "editorialGroup": "family",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-arquivo-x"
+    },
+    {
+      "title": "DC Especial Abril",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-dc-especial-abril"
+    },
+    {
+      "title": "A Saga do Batman — Panini",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-saga-do-batman-panini"
+    },
+    {
+      "title": "Crise nas Infinitas Terras",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-crise-nas-infinitas-terras"
+    },
+    {
+      "title": "Lendas",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-lendas"
+    },
+    {
+      "title": "Milênio",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-milenio"
+    },
+    {
+      "title": "Invasão!",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-invasao"
+    },
+    {
+      "title": "Conspiração Janus",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-conspiracao-janus"
+    },
+    {
+      "title": "Armageddon 2001",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-armageddon-2001"
+    },
+    {
+      "title": "Eclipso e as Trevas Eternas",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-eclipso-e-as-trevas-eternas"
+    },
+    {
+      "title": "Linhagens",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-linhagens"
+    },
+    {
+      "title": "Zero Hora",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-zero-hora"
+    },
+    {
+      "title": "Quando Mundos Colidem",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-quando-mundos-colidem"
+    },
+    {
+      "title": "A Vingança do Submundo",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-vinganca-do-submundo"
+    },
+    {
+      "title": "A Noite Final",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-noite-final"
+    },
+    {
+      "title": "Gênese",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-genese"
+    },
+    {
+      "title": "DC Um Milhão",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-dc-um-milhao"
+    },
+    {
+      "title": "Dia do Julgamento",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-dia-do-julgamento"
+    },
+    {
+      "title": "Crise de Identidade e Crise de Consciência",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-crise-de-identidade-e-crise-de-consciencia"
+    },
+    {
+      "title": "Prelúdio para a Crise Infinita",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-preludio-para-a-crise-infinita"
+    },
+    {
+      "title": "Crise Infinita",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-crise-infinita"
+    },
+    {
+      "title": "Crise Infinita: Batalha por Blüdhaven",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-crise-infinita-batalha-por-bludhaven"
+    },
+    {
+      "title": "52",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-52"
+    },
+    {
+      "title": "Os Quatro Cavaleiros do Apocalipse",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-os-quatro-cavaleiros-do-apocalipse"
+    },
+    {
+      "title": "III Guerra Mundial",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-iii-guerra-mundial"
+    },
+    {
+      "title": "Bíblia do Crime: Cinco Lições de Sangue",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-biblia-do-crime-cinco-licoes-de-sangue"
+    },
+    {
+      "title": "Contagem Regressiva para o Mistério",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-contagem-regressiva-para-o-misterio"
+    },
+    {
+      "title": "Contagem Regressiva para Aventura",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-contagem-regressiva-para-aventura"
+    },
+    {
+      "title": "Contagem Regressiva: Arena",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-contagem-regressiva-arena"
+    },
+    {
+      "title": "A Busca por Ray Palmer",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-busca-por-ray-palmer"
+    },
+    {
+      "title": "A Morte dos Novos Deuses",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-morte-dos-novos-deuses"
+    },
+    {
+      "title": "Crise Final",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-crise-final"
+    },
+    {
+      "title": "A Noite Mais Densa",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-noite-mais-densa"
+    },
+    {
+      "title": "Dia Mais Claro",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-dia-mais-claro"
+    },
+    {
+      "title": "Flashpoint / Ponto de Ignição",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-flashpoint-ponto-de-ignicao"
+    },
+    {
+      "title": "Convergência",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-convergencia"
+    },
+    {
+      "title": "Vilania Eterna",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-vilania-eterna"
+    },
+    {
+      "title": "Universo DC: Renascimento",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-universo-dc-renascimento"
+    },
+    {
+      "title": "Terrores Noturnos",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-terrores-noturnos"
+    },
+    {
+      "title": "Planeta Lázaro",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-planeta-lazaro"
+    },
+    {
+      "title": "Os Novos 52: Fim dos Tempos",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-os-novos-52-fim-dos-tempos"
+    },
+    {
+      "title": "Os Infectados",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-os-infectados"
+    },
+    {
+      "title": "Noites de Trevas: Metal",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-noites-de-trevas-metal"
+    },
+    {
+      "title": "Mundo Podre",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-mundo-podre"
+    },
+    {
+      "title": "Liga da Justiça — Encadernada",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-liga-da-justica-encadernada"
+    },
+    {
+      "title": "Inverno sem Fim",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-inverno-sem-fim"
+    },
+    {
+      "title": "Heróis em Crise",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-herois-em-crise"
+    },
+    {
+      "title": "Guerra pela Terra-3",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-guerra-pela-terra-3"
+    },
+    {
+      "title": "Guerra da Trindade",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-guerra-da-trindade"
+    },
+    {
+      "title": "Evento Leviatã",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-evento-leviata"
+    },
+    {
+      "title": "Death Metal",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-death-metal"
+    },
+    {
+      "title": "DC Tudo ou Nada Especial / DC All In Special",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-dc-tudo-ou-nada-especial-dc-all-in-special"
+    },
+    {
+      "title": "Crise Sombria nas Infinitas Terras",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-crise-sombria-nas-infinitas-terras"
+    },
+    {
+      "title": "Contagem Regressiva para Poder Absoluto + Poder Absoluto",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-contagem-regressiva-para-poder-absoluto-poder-absoluto"
+    },
+    {
+      "title": "Ano do Vilão",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-ano-do-vilao"
+    },
+    {
+      "title": "Além do Ponto de Ignição",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-alem-do-ponto-de-ignicao"
+    },
+    {
+      "title": "A Multiversidade",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-a-multiversidade"
+    },
+    {
+      "title": "Casa de Brainiac",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-casa-de-brainiac"
+    },
+    {
+      "title": "Guerra Darkseid",
+      "type": "hq",
+      "editorialGroup": "Grandes Sagas DC",
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "hq-guerra-darkseid"
+    },
+    {
+      "title": "Revista Recreio",
+      "type": "magazine",
+      "sections": [
+        "Revistas e leituras rápidas"
+      ],
+      "editionCount": 0,
+      "catalogStatus": "source-inventory-required",
+      "coverStatus": "source-review-required",
+      "id": "magazine-revista-recreio"
+    }
+  ],
+  "exclusions": [
+    {
+      "title": "Crossed",
+      "reason": "conteúdo incompatível com o catálogo estudantil"
+    },
+    {
+      "title": "Dexter",
+      "reason": "conteúdo incompatível com o catálogo estudantil"
+    }
+  ],
+  "expansionPriorities": [
+    "Absolute Batman",
+    "Absolute Superman",
+    "Absolute Mulher-Maravilha",
+    "Absolute Flash",
+    "Absolute Lanterna Verde",
+    "Absolute Arqueiro Verde",
+    "Absolute Mulher-Gato",
+    "Absolute Evil",
+    "Absolute Cassandra Cain: The Shadow's Hand",
+    "Watchmen",
+    "Batman: Ano Um",
+    "Sandman Mystery Theatre"
+  ]
+}

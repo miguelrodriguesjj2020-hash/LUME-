@@ -1,0 +1,45 @@
+name: LUME Catalog Pipeline CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, 'codex/**' ]
+    paths:
+      - 'catalog/**'
+      - 'tool/build_*target*.mjs'
+      - 'tool/test_*target*.mjs'
+      - 'tool/normalize_media.py'
+      - 'tool/cover_candidates.py'
+      - 'tool/test_normalize_media.py'
+      - '.github/workflows/catalog-pipeline-ci.yml'
+  pull_request:
+    paths:
+      - 'catalog/**'
+      - 'tool/**'
+      - '.github/workflows/catalog-pipeline-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  catalog-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install image and PDF test dependencies
+        run: python -m pip install --disable-pip-version-check pillow pymupdf
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Verify public curation and source matching
+        run: node --test tool/test_target_plan.mjs tool/test_private_target_index.mjs tool/test_record_cover_decision.mjs tool/test_assemble_catalog.mjs
+      - name: Verify normalization and visual candidate pipeline
+        run: PYTHONPATH=tool python -m unittest tool/test_normalize_media.py
+      - name: Assert private Drive identifiers are absent
+        run: |
+          set -euo pipefail
+          ! git grep -nE 'source(File|Folder)Ids?' -- catalog

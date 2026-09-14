@@ -5,6 +5,7 @@ flutter/android/
 flutter/build/
 flutter/.pub-cache/
 build/
+__pycache__/
+*.py[cod]
 *.jks
 key.properties
-

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "privacy": "Drive identifiers are resolved only in ignored private build artifacts.",
+  "summary": {
+    "worksReviewed": 0,
+    "sourceFilesInspected": 0,
+    "coversAcceptedLocal": 0,
+    "replacementSourcesRequired": 0,
+    "coversUploaded": 0
+  },
+  "decisions": []
+}
