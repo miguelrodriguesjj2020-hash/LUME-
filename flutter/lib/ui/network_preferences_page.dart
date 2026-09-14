@@ -1,0 +1,24 @@
+import 'package:flutter/material.dart';
+import '../services/app_services.dart';
+
+class NetworkPreferencesPage extends StatefulWidget{
+  final AppServices services;
+  const NetworkPreferencesPage({super.key,required this.services});
+  @override State<NetworkPreferencesPage> createState()=>_NetworkPreferencesPageState();
+}
+class _NetworkPreferencesPageState extends State<NetworkPreferencesPage>{
+  bool? updates; bool? downloads;
+  @override void initState(){super.initState();_load();}
+  Future<void> _load() async {
+    final u=await widget.services.networkPolicy.wifiOnlyUpdates();
+    final d=await widget.services.networkPolicy.wifiOnlyDownloads();
+    if(mounted)setState((){updates=u;downloads=d;});
+  }
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('Uso de dados')),
+    body:updates==null?const Center(child:CircularProgressIndicator()):ListView(children:[
+      SwitchListTile(title:const Text('Atualizações somente no Wi-Fi'),subtitle:const Text('Mantém a cópia atual legível e evita atualizar arquivos grandes pelos dados móveis.'),value:updates!,onChanged:(v)async{await widget.services.networkPolicy.setWifiOnlyUpdates(v);if(mounted)setState(()=>updates=v);}),
+      SwitchListTile(title:const Text('Downloads somente no Wi-Fi'),subtitle:const Text('Quando desativado, downloads iniciados por você também podem usar dados móveis.'),value:downloads!,onChanged:(v)async{await widget.services.networkPolicy.setWifiOnlyDownloads(v);if(mounted)setState(()=>downloads=v);}),
+    ]),
+  );
+}

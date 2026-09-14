@@ -3,7 +3,8 @@ name: LUME Android Build
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, 'codex/**' ]
+  pull_request:
 
 permissions:
   contents: read
@@ -19,8 +20,8 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Reconstruct and verify exact Flutter source
-        run: python tool/reconstruct_flutter_bundle.py
+      - name: Verify reviewed direct Flutter source
+        run: python tool/verify_flutter_source.py
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
@@ -67,13 +68,10 @@ jobs:
             echo 'SIGNING_INPUT=qa-debug-fallback' > flutter/build/qa/signing-input.txt
           fi
 
-      - name: Apply audited build fixes and account flow
+      - name: Verify candidate source and include runtime tests
         run: |
           set -euo pipefail
-          git apply --check tool/flutter_build_fixes.patch
-          git apply tool/flutter_build_fixes.patch
-          git apply --check tool/account_management_integration.patch
-          git apply tool/account_management_integration.patch
+          python tool/verify_flutter_source.py
           if [ -f flutter/test/widget_test.dart ]; then
             grep -q 'MyApp' flutter/test/widget_test.dart
             rm flutter/test/widget_test.dart
@@ -82,7 +80,7 @@ jobs:
             grep -q 'package:flutter_lints/flutter.yaml' flutter/analysis_options.yaml
             rm flutter/analysis_options.yaml
           fi
-          grep -q '^version: 0.35.3+38$' flutter/pubspec.yaml
+          grep -q '^version: 0.40.0+40$' flutter/pubspec.yaml
           command -v zip >/dev/null
           command -v python3 >/dev/null
           cp tool/build_tests/*.dart flutter/test/
@@ -138,8 +136,8 @@ jobs:
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml | tee "$QA/aapt-manifest-tree.txt"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$QA/apksigner.txt"
           grep -q "package: name='br.com.lume.bibliotecaestudantil'" "$QA/aapt-badging.txt"
-          grep -q "versionCode='38'" "$QA/aapt-badging.txt"
-          grep -q "versionName='0.35.3'" "$QA/aapt-badging.txt"
+          grep -q "versionCode='40'" "$QA/aapt-badging.txt"
+          grep -q "versionName='0.40.0'" "$QA/aapt-badging.txt"
           grep -q "application-label:'LUME'" "$QA/aapt-badging.txt"
           grep -q "uses-permission: name='android.permission.INTERNET'" "$QA/aapt-permissions.txt"
           if grep -q '^application-debuggable' "$QA/aapt-badging.txt"; then

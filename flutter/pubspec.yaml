@@ -1,7 +1,7 @@
 name: lume
-version: 0.35.0+35
+version: 0.40.0+40
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: '>=3.8.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
@@ -13,6 +13,7 @@ dependencies:
   pdfx: ^2.11.0
   webview_flutter: ^4.7.0
   connectivity_plus: ^6.1.5
+  flutter_secure_storage: ^11.1.0
 
   path_provider: ^2.1.5
 

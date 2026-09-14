@@ -1,0 +1,38 @@
+import '../data/database.dart';
+
+enum NetworkClass { offline, wifi, cellular, ethernet, other }
+
+enum TransferIntent { reading, userDownload, mediaUpdate, sync }
+
+class TransferDecision {
+  final bool allowed;
+  final String? reason;
+  const TransferDecision.allow():allowed=true,reason=null;
+  const TransferDecision.block(this.reason):allowed=false;
+}
+
+/// Policy is deliberately decoupled from any connectivity plugin. A platform
+/// adapter supplies NetworkClass; the policy itself remains unit-testable.
+class NetworkPolicy {
+  final LumeDb db;
+  static const wifiOnlyUpdatesKey='network.wifi_only_updates';
+  static const wifiOnlyDownloadsKey='network.wifi_only_downloads';
+  NetworkPolicy(this.db);
+
+  Future<bool> wifiOnlyUpdates() async => (await db.getSetting(wifiOnlyUpdatesKey) ?? '1')=='1';
+  Future<bool> wifiOnlyDownloads() async => (await db.getSetting(wifiOnlyDownloadsKey) ?? '0')=='1';
+  Future<void> setWifiOnlyUpdates(bool value)=>db.setSetting(wifiOnlyUpdatesKey,value?'1':'0');
+  Future<void> setWifiOnlyDownloads(bool value)=>db.setSetting(wifiOnlyDownloadsKey,value?'1':'0');
+
+  Future<TransferDecision> decide(NetworkClass network,TransferIntent intent) async {
+    if(network==NetworkClass.offline) return const TransferDecision.block('offline');
+    final unmetered=network==NetworkClass.wifi || network==NetworkClass.ethernet;
+    if(intent==TransferIntent.mediaUpdate && await wifiOnlyUpdates() && !unmetered){
+      return const TransferDecision.block('media updates require Wi-Fi');
+    }
+    if(intent==TransferIntent.userDownload && await wifiOnlyDownloads() && !unmetered){
+      return const TransferDecision.block('downloads require Wi-Fi');
+    }
+    return const TransferDecision.allow();
+  }
+}

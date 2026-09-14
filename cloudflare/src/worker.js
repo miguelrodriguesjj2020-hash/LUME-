@@ -48,10 +48,12 @@ async function installCatalog(db, manifest) {
     return revision;
   }
   const statements = [
-    db.prepare('DELETE FROM works'), db.prepare('DELETE FROM tombstones'), db.prepare('DELETE FROM media')
+    db.prepare('DELETE FROM works'), db.prepare('DELETE FROM tombstones'), db.prepare('DELETE FROM media'), db.prepare('DELETE FROM covers')
   ];
   manifest.works.forEach((w, ordinal) => {
     statements.push(db.prepare('INSERT INTO works(id,ordinal,json) VALUES(?,?,?)').bind(w.id, ordinal, JSON.stringify(w)));
+    statements.push(db.prepare('INSERT INTO covers(work_id,source_file_id,file_name,mime_type,byte_size,sha256) VALUES(?,?,?,?,?,?)')
+      .bind(w.id, w.cover.sourceFileId, w.cover.fileName, w.cover.mimeType, w.cover.byteSize, w.cover.sha256));
     for (const e of w.editions) {
       statements.push(db.prepare('INSERT INTO media(edition,source_file_id,file_name,format,byte_size,etag,sha256) VALUES(?,?,?,?,?,?,?)')
         .bind(e.id, e.sourceFileId, e.fileName, e.format, e.byteSize ?? null, e.etag ?? null, e.sha256 ?? null));
@@ -138,6 +140,20 @@ async function descriptor(request, env, editionId) {
   };
 }
 
+async function coverDescriptor(request, env, workId) {
+  const meta = await env.DB.prepare('SELECT * FROM covers WHERE work_id=?').bind(workId).first();
+  if (!meta) return null;
+  const signedId = `cover:${workId}`;
+  const expiresAt = Date.now() + 300_000;
+  const sig = await signMedia(signedId, expiresAt, env.MEDIA_SECRET);
+  const origin = new URL(request.url).origin;
+  return {
+    strategy: 'signed', workId, expiresAt, token: sig,
+    byteSize: meta.byte_size, sha256: meta.sha256, mimeType: meta.mime_type,
+    url: `${origin}/v1/cover-bytes/${encodeURIComponent(workId)}?expires=${expiresAt}&sig=${encodeURIComponent(sig)}`
+  };
+}
+
 export async function route(request, env) {
   const url = new URL(request.url), path = url.pathname;
   if (request.method === 'GET' && path === '/v1/health') return json(200, { ok: true, service: 'lume', protocol: 1 });
@@ -200,6 +216,12 @@ export async function route(request, env) {
     const d = await descriptor(request, env, decodeURIComponent(mm[1]));
     return d ? json(200, d) : json(404, { error: 'media_not_found' });
   }
+  const cm = path.match(/^\/v1\/covers\/([^/]+)$/);
+  if (request.method === 'GET' && cm) {
+    if (!session) return json(401, { error: 'unauthorized' });
+    const d = await coverDescriptor(request, env, decodeURIComponent(cm[1]));
+    return d ? json(200, d) : json(404, { error: 'cover_not_found' });
+  }
   const mb = path.match(/^\/v1\/media-bytes\/([^/]+)$/);
   if ((request.method === 'GET' || request.method === 'HEAD') && mb) {
     const edition = decodeURIComponent(mb[1]);
@@ -207,6 +229,16 @@ export async function route(request, env) {
     if (!await verifyMedia(edition, expires, url.searchParams.get('sig'), env.MEDIA_SECRET)) return json(403, { error: 'invalid_media_signature' });
     const meta = await env.DB.prepare('SELECT source_file_id FROM media WHERE edition=?').bind(edition).first();
     if (!meta) return json(404, { error: 'media_not_found' });
+    try { return await proxyDriveFile(request, env, meta.source_file_id); }
+    catch { return json(502, { error: 'media_upstream_unavailable' }); }
+  }
+  const cb = path.match(/^\/v1\/cover-bytes\/([^/]+)$/);
+  if ((request.method === 'GET' || request.method === 'HEAD') && cb) {
+    const workId = decodeURIComponent(cb[1]);
+    const expires = Number(url.searchParams.get('expires'));
+    if (!await verifyMedia(`cover:${workId}`, expires, url.searchParams.get('sig'), env.MEDIA_SECRET)) return json(403, { error: 'invalid_media_signature' });
+    const meta = await env.DB.prepare('SELECT source_file_id FROM covers WHERE work_id=?').bind(workId).first();
+    if (!meta) return json(404, { error: 'cover_not_found' });
     try { return await proxyDriveFile(request, env, meta.source_file_id); }
     catch { return json(502, { error: 'media_upstream_unavailable' }); }
   }

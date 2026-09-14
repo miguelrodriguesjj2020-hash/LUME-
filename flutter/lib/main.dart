@@ -22,13 +22,14 @@ class LumeBootstrap extends StatefulWidget {
 
 class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserver {
   final navigatorKey=GlobalKey<NavigatorState>();
-  final SessionVault sessionVault=MemorySessionVault();
+  late final SessionVault sessionVault=SecureSessionVault(FlutterSecureSessionStore());
   late final LumeApi api=LumeApi(widget.apiBase);
   StreamSubscription<SessionEvent>? sessionSub;
   StreamSubscription<NetworkClass>? connectivitySub;
   NetworkClass? lastNetwork;
   AppServices? services;
   bool creating=false;
+  bool restoringSession=true;
   String? loginNotice;
 
   @override
@@ -36,14 +37,33 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     sessionSub=api.sessionEvents.listen(_onSessionEvent);
+    unawaited(_restoreSession());
+  }
+
+  Future<void> _restoreSession() async {
+    try{
+      final restored=await sessionVault.load();
+      if(restored!=null && restored.authenticated){
+        api.session
+          ..token=restored.token
+          ..profileId=restored.profileId
+          ..role=restored.role
+          ..expiresAt=restored.expiresAt;
+        await authenticated();
+      }
+    }catch(_){
+      try{await sessionVault.clear();}catch(_){}
+    }finally{
+      if(mounted)setState(()=>restoringSession=false);
+    }
   }
 
   Future<void> _onSessionEvent(SessionEvent event) async {
     if(event.type==SessionEventType.authenticated){
-      await sessionVault.save(api.session);
+      try{await sessionVault.save(api.session);}catch(_){}
       return;
     }
-    await sessionVault.clear();
+    try{await sessionVault.clear();}catch(_){}
     await connectivitySub?.cancel();
     connectivitySub=null;
     lastNetwork=null;
@@ -57,6 +77,8 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
           ? 'Sua sessão expirou. Entre novamente; sua leitura e downloads locais foram preservados.'
           : null;
     });
+    // Force the authentication boundary even when expiry happened from a
+    // reader/download route above the app home.
     navigatorKey.currentState?.popUntil((route)=>route.isFirst);
   }
 
@@ -99,8 +121,15 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state){
     if(state==AppLifecycleState.resumed && services!=null){
       services!.offlineDownloads.reconcile();
-      services!.sync.run(services!.profileId,mode:SyncRunMode.foreground).catchError((_){return null;});
-      services!.revalidateRecentMedia().catchError((_){return null;});
+      // SessionExpiredException is surfaced by LumeApi through sessionEvents;
+      // local state remains in SQLite if the network/session is unavailable.
+      unawaited(() async {
+        try { await services!.sync.run(services!.profileId,mode:SyncRunMode.foreground); } catch (_) {}
+      }());
+      // Advisory stale-while-revalidate: never blocks local reading or demotes READY assets.
+      unawaited(() async {
+        try { await services!.revalidateRecentMedia(); } catch (_) {}
+      }());
     }
   }
 
@@ -110,8 +139,10 @@ class _LumeBootstrapState extends State<LumeBootstrap> with WidgetsBindingObserv
     debugShowCheckedModeBanner:false,
     title:'LUME',
     theme:ThemeData(useMaterial3:true),
-    home:services==null
-      ? LoginPage(api:api,onAuthenticated:authenticated,notice:loginNotice)
-      : CatalogPage(services:services!),
+    home:restoringSession
+      ? const Scaffold(body:Center(child:CircularProgressIndicator()))
+      : services==null
+        ? LoginPage(api:api,onAuthenticated:authenticated,notice:loginNotice)
+        : CatalogPage(services:services!),
   );
 }

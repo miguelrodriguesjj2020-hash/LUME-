@@ -34,9 +34,13 @@ test('media signatures expire and reject tampering', async () => {
 });
 
 test('catalog validator preserves mobile contract', () => {
-  const manifest = { revision: 2, works: [{ id: 'w1', type: 'hq', displayTitle: 'HQ', editions: [{ id: 'e1', format: 'cbz', sourceFileId: 'drive1', fileName: 'hq.cbz' }], editorialSections: ['Recomendações'] }], tombstones: [] };
+  const cover = { sourceFileId: 'cover1', fileName: 'hq.jpg', mimeType: 'image/jpeg', byteSize: 1200, sha256: 'a'.repeat(64) };
+  const manifest = { revision: 2, works: [{ id: 'w1', type: 'hq', displayTitle: 'HQ', cover, editions: [{ id: 'e1', format: 'cbz', sourceFileId: 'drive1', fileName: 'hq.cbz' }], editorialSections: ['Recomendações'] }], tombstones: [] };
   assert.equal(validateCatalogManifest(manifest), true);
   assert.throws(() => validateCatalogManifest({ ...manifest, works: [...manifest.works, manifest.works[0]] }), /duplicate work id/);
+  assert.throws(() => validateCatalogManifest({ ...manifest, works: [{ ...manifest.works[0], cover: undefined }] }), /cover missing/);
+  assert.throws(() => validateCatalogManifest({ ...manifest, works: [{ ...manifest.works[0], editions: [{ ...manifest.works[0].editions[0], format: 'cbr' }] }] }), /invalid edition format/);
+  assert.equal(validateCatalogManifest({ ...manifest, works: [{ ...manifest.works[0], type: 'magazine' }] }), true);
 });
 
 test('progress anti-regression semantics match reference backend', () => {

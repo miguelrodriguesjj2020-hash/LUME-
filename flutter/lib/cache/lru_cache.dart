@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+/// Byte-budgeted LRU for small hot objects. Large media files stay on disk.
 class LruCache<K, V> {
   final int maxBytes;
   final int Function(V value) sizeOf;
@@ -16,7 +17,7 @@ class LruCache<K, V> {
   V? get(K key) {
     final value = _items.remove(key);
     if (value == null) return null;
-    _items[key] = value;
+    _items[key] = value; // most recently used
     return value;
   }
 
@@ -25,7 +26,7 @@ class LruCache<K, V> {
     if (cost < 0) throw StateError('negative cache cost');
     final old = _items.remove(key);
     if (old != null) _bytes -= sizeOf(old);
-    if (cost > maxBytes) return;
+    if (cost > maxBytes) return; // never let one huge object evict everything
     _items[key] = value;
     _bytes += cost;
     _evict();
@@ -51,6 +52,7 @@ class LruCache<K, V> {
   }
 }
 
+/// Two-tier cache coordinator. Disk is authoritative; RAM is only an accelerator.
 class HybridReadCache {
   final LruCache<String, String> xhtml;
   final LruCache<String, List<int>> pageBytes;
@@ -60,6 +62,7 @@ class HybridReadCache {
         pageBytes = LruCache(maxBytes: pageBytesBudget, sizeOf: (b) => b.length);
 
   void clearEdition(String editionId) {
+    // Keys are namespaced as editionId:path. Iterate on snapshots to avoid mutation issues.
     for (final key in List<String>.from(xhtml._items.keys)) {
       if (key.startsWith('$editionId:')) xhtml.remove(key);
     }

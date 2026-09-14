@@ -46,7 +46,7 @@ jobs:
           curl --fail --silent --show-error \
             -H "authorization: Bearer $TOKEN" \
             "$LUME_API_BASE/v1/bootstrap" \
-            | python3 -c 'import json,sys; d=json.load(sys.stdin); works=d.get("works") or []; assert len(works)>0, "production catalog is empty"'
+            | python3 -c 'import json,sys,re; d=json.load(sys.stdin); works=d.get("works") or []; assert len(works)==336, f"expected 336 works, got {len(works)}"; assert all(isinstance(w.get("cover"),dict) and re.fullmatch(r"[a-fA-F0-9]{64}",w["cover"].get("sha256", "")) for w in works), "catalog has unverified covers"; assert all(e.get("format") in {"pdf","epub","cbz"} for w in works for e in w.get("editions",[])), "catalog has unsupported reading formats"'
           curl --fail --silent --show-error \
             -H "authorization: Bearer $TOKEN" \
             "$LUME_API_BASE/v1/admin/users" \
@@ -56,8 +56,8 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Reconstruct Flutter source
-        run: python tool/reconstruct_flutter_bundle.py
+      - name: Verify reviewed direct Flutter source
+        run: python tool/verify_flutter_source.py
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
@@ -85,13 +85,10 @@ jobs:
           storeFile=lume-release.jks
           EOF
 
-      - name: Apply audited app overlays
+      - name: Verify production source
         run: |
           set -euo pipefail
-          git apply --check tool/flutter_build_fixes.patch
-          git apply tool/flutter_build_fixes.patch
-          git apply --check tool/account_management_integration.patch
-          git apply tool/account_management_integration.patch
+          python tool/verify_flutter_source.py
           rm -f flutter/test/widget_test.dart flutter/analysis_options.yaml
           cp tool/build_tests/*.dart flutter/test/
 
@@ -122,8 +119,8 @@ jobs:
           "$AAPT" dump badging "$APK" | tee "$AUDIT/aapt-badging.txt"
           "$APKSIGNER" verify --verbose --print-certs "$APK" | tee "$AUDIT/apksigner.txt"
           grep -q "package: name='br.com.lume.bibliotecaestudantil'" "$AUDIT/aapt-badging.txt"
-          grep -q "versionCode='38'" "$AUDIT/aapt-badging.txt"
-          grep -q "versionName='0.35.3'" "$AUDIT/aapt-badging.txt"
+          grep -q "versionCode='40'" "$AUDIT/aapt-badging.txt"
+          grep -q "versionName='0.40.0'" "$AUDIT/aapt-badging.txt"
           ! grep -q '^application-debuggable' "$AUDIT/aapt-badging.txt"
           ! grep -q 'CN=Android Debug' "$AUDIT/apksigner.txt"
           CERT_SHA="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p; s/^V2 Signer: certificate SHA-256 digest: //p' "$AUDIT/apksigner.txt" | head -1 | tr '[:upper:]' '[:lower:]' | tr -d ':')"
@@ -137,7 +134,7 @@ jobs:
       - name: Upload final production APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: LUME-0.35.3-build38-PRODUCTION
+          name: LUME-0.40.0-build40-PRODUCTION
           path: |
             flutter/build/app/outputs/flutter-apk/app-release.apk
             flutter/build/app/outputs/flutter-apk/app-release.apk.sha256

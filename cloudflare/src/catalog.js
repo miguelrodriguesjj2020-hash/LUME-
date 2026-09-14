@@ -9,9 +9,16 @@ export function validateCatalogManifest(input) {
     if (!wid) throw new Error('work id missing');
     if (workIds.has(wid)) throw new Error(`duplicate work id: ${wid}`);
     workIds.add(wid);
-    if (!['book', 'hq', 'manga', 'graphic_novel'].includes(w.type)) throw new Error(`invalid work type for ${wid}: ${w.type}`);
+    if (!['book', 'hq', 'manga', 'graphic_novel', 'magazine'].includes(w.type)) throw new Error(`invalid work type for ${wid}: ${w.type}`);
     const title = typeof w.displayTitle === 'string' && w.displayTitle.trim() ? w.displayTitle : (typeof w.canonicalTitle === 'string' ? w.canonicalTitle : '');
     if (!title.trim()) throw new Error(`work title missing for ${wid}`);
+    const cover = w.cover;
+    if (!cover || typeof cover !== 'object' || Array.isArray(cover)) throw new Error(`cover missing for ${wid}`);
+    if (typeof cover.sourceFileId !== 'string' || !cover.sourceFileId.trim()) throw new Error(`cover sourceFileId missing for ${wid}`);
+    if (typeof cover.fileName !== 'string' || !cover.fileName.trim()) throw new Error(`cover fileName missing for ${wid}`);
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(cover.mimeType)) throw new Error(`invalid cover mimeType for ${wid}: ${cover.mimeType}`);
+    if (!Number.isInteger(cover.byteSize) || cover.byteSize < 1) throw new Error(`invalid cover byteSize for ${wid}`);
+    if (typeof cover.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(cover.sha256)) throw new Error(`invalid cover sha256 for ${wid}`);
     if (!Array.isArray(w.editions)) throw new Error(`editions must be an array for ${wid}`);
     for (const key of ['sections', 'editorialSections', 'tags']) {
       const value = w[key];
@@ -25,7 +32,7 @@ export function validateCatalogManifest(input) {
       if (!eid) throw new Error(`edition id missing in ${wid}`);
       if (editionIds.has(eid)) throw new Error(`duplicate edition id: ${eid}`);
       editionIds.add(eid);
-      if (!['pdf', 'epub', 'cbz', 'cbr'].includes(e.format)) throw new Error(`invalid edition format for ${eid}: ${e.format}`);
+      if (!['pdf', 'epub', 'cbz'].includes(e.format)) throw new Error(`invalid edition format for ${eid}: ${e.format}`);
       if (typeof e.sourceFileId !== 'string' || !e.sourceFileId.trim()) throw new Error(`sourceFileId missing for ${eid}`);
       if (typeof e.fileName !== 'string' || !e.fileName.trim()) throw new Error(`fileName missing for ${eid}`);
     }
